@@ -1,0 +1,8 @@
+{
+  "variants": {
+    "facing=north": { "model": "mzrpg144:block/mz_medal_box" },
+    "facing=south": { "model": "mzrpg144:block/mz_medal_box", "y": 180 },
+    "facing=west":  { "model": "mzrpg144:block/mz_medal_box", "y": 270 },
+    "facing=east":  { "model": "mzrpg144:block/mz_medal_box", "y": 90 }
+  }
+}

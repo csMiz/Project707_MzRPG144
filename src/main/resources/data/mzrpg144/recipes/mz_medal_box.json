@@ -1,0 +1,16 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    "x x",
+    "   ",
+    "x x"
+  ],
+  "key": {
+    "x": {
+      "tag": "minecraft:planks"
+    }
+  },
+  "result": {
+    "item": "mzrpg144:mz_medal_box"
+  }
+}

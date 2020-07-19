@@ -1,0 +1,6 @@
+{
+  "parent": "block/cube_all",
+  "textures": {
+    "all": "mzrpg144:block/mz_gem_block1"
+  }
+}

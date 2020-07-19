@@ -1,0 +1,17 @@
+{
+  "itemGroup.mzrpg144": "Miz's RPG for 1.14.4",
+
+  "item.mzrpg144.mz_gem": "Coin",
+  "item.mzrpg144.mz_sword_iron": "Iron Sword",
+
+  "block.mzrpg144.mz_gem_block": "Coin Box",
+  "block.mzrpg144.mz_medal_box": "Medal Box",
+
+  "screen.mzrpg144.mz_medal_box_text1": "Specialty Dashboard",
+
+  "txt.btnOK1": "OK",
+  "txt.spec_warrior": "Warrior",
+  "txt.spec_archer": "Archer",
+  "txt.spec_mage": "Mage",
+  "txt.spec_warrior_desc": "A balanced melee specialty, with good attack and defense value.## ##Can use swords, great swords and axes."
+}

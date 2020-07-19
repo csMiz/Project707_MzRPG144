@@ -1,0 +1,13 @@
+{
+  "parent": "block/cube",
+  "textures": {
+    "down": "mzrpg144:block/mz_medal_box_bottom",
+    "up": "mzrpg144:block/mz_medal_box_top",
+    "north": "mzrpg144:block/mz_medal_box_side",
+    "south": "mzrpg144:block/mz_medal_box_side",
+    "east": "mzrpg144:block/mz_medal_box_side",
+    "west": "mzrpg144:block/mz_medal_box_side",
+    "particle": "mzrpg144:block/mz_medal_box_side"
+  }
+
+}

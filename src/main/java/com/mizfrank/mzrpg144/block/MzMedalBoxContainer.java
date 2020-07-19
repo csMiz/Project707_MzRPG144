@@ -1,0 +1,141 @@
+package com.mizfrank.mzrpg144.block;
+
+import net.minecraft.block.Block;
+import net.minecraft.block.Blocks;
+import net.minecraft.entity.player.PlayerEntity;
+import net.minecraft.entity.player.PlayerInventory;
+import net.minecraft.inventory.IInventory;
+import net.minecraft.inventory.Inventory;
+import net.minecraft.inventory.container.Container;
+import net.minecraft.inventory.container.ContainerType;
+import net.minecraft.inventory.container.Slot;
+import net.minecraft.inventory.container.StonecutterContainer;
+import net.minecraft.item.ItemStack;
+import net.minecraft.item.Items;
+import net.minecraft.util.IWorldPosCallable;
+import net.minecraft.util.math.BlockPos;
+import net.minecraft.world.World;
+import net.minecraftforge.items.IItemHandler;
+import net.minecraftforge.items.ItemStackHandler;
+import net.minecraftforge.items.SlotItemHandler;
+import net.minecraftforge.items.wrapper.InvWrapper;
+
+import javax.annotation.Nullable;
+
+public class MzMedalBoxContainer extends Container {
+
+    private PlayerEntity playerEntity;
+    private IItemHandler playerInventory;
+    private World world;
+    private BlockPos blockPos;
+//    public final IInventory contentInventory;
+
+    protected MzMedalBoxContainer(int windowId, World world, BlockPos pos, PlayerInventory playerInventory, PlayerEntity player) {
+        super(ContainerCollection.MZ_MEDAL_BOX_CONTAINER.get(), windowId);
+        this.playerEntity = player;
+        this.playerInventory = new InvWrapper(playerInventory);
+        this.world = world;
+        this.blockPos = pos;
+//        contentInventory = new Inventory(1){
+//            public void markDirty() {
+//                super.markDirty();
+//                onCraftMatrixChanged(this);
+//            }
+//        };
+
+//        initLayoutControl();
+    }
+
+    @Override
+    public boolean canInteractWith(PlayerEntity playerEntity) {
+        return isWithinUsableDistance(IWorldPosCallable.of(world, blockPos), playerEntity, BlockCollection.MZ_MEDAL_BOX.get());
+    }
+
+//    /**
+//     * Design the UI elements
+//     * */
+//    private void initLayoutControl(){
+//        addSlot(new Slot(contentInventory, 0, 64, 24));
+//        layoutPlayerInventorySlots(10, 70);
+//    }
+
+//
+//    private int addSlotRange(IItemHandler handler, int index, int x, int y, int amount, int dx) {
+//        for (int i = 0 ; i < amount ; i++) {
+//            addSlot(new SlotItemHandler(handler, index, x, y));
+//            x += dx;
+//            index++;
+//        }
+//        return index;
+//    }
+//
+//    private int addSlotBox(IItemHandler handler, int index, int x, int y, int horAmount, int dx, int verAmount, int dy) {
+//        for (int j = 0 ; j < verAmount ; j++) {
+//            index = addSlotRange(handler, index, x, y, horAmount, dx);
+//            y += dy;
+//        }
+//        return index;
+//    }
+//
+//    private void layoutPlayerInventorySlots(int leftCol, int topRow) {
+//        // Player inventory
+//        addSlotBox(playerInventory, 9, leftCol, topRow, 9, 18, 3, 18);
+//
+//        // Hotbar
+//        topRow += 58;
+//        addSlotRange(playerInventory, 0, leftCol, topRow, 9, 18);
+//    }
+//
+//    @Override
+//    public ItemStack transferStackInSlot(PlayerEntity playerIn, int index) {
+//        ItemStack itemstack = ItemStack.EMPTY;
+//        Slot slot = this.inventorySlots.get(index);
+//        if (slot != null && slot.getHasStack()) {
+//            ItemStack stack = slot.getStack();
+//            itemstack = stack.copy();
+//            if (index == 0) {
+//                if (!this.mergeItemStack(stack, 1, 37, true)) {
+//                    return ItemStack.EMPTY;
+//                }
+//                slot.onSlotChange(stack, itemstack);
+//            } else {
+//                if (stack.getItem() == Items.DIAMOND) {
+//                    if (!this.mergeItemStack(stack, 0, 1, false)) {
+//                        return ItemStack.EMPTY;
+//                    }
+//                } else if (index < 28) {
+//                    if (!this.mergeItemStack(stack, 28, 37, false)) {
+//                        return ItemStack.EMPTY;
+//                    }
+//                } else if (index < 37 && !this.mergeItemStack(stack, 1, 28, false)) {
+//                    return ItemStack.EMPTY;
+//                }
+//            }
+//
+//            if (stack.isEmpty()) {
+//                slot.putStack(ItemStack.EMPTY);
+//            } else {
+//                slot.onSlotChanged();
+//            }
+//
+//            if (stack.getCount() == itemstack.getCount()) {
+//                return ItemStack.EMPTY;
+//            }
+//
+//            slot.onTake(playerIn, stack);
+//        }
+//
+//        return itemstack;
+//    }
+//
+//    @Override
+//    public void onContainerClosed(PlayerEntity playerIn) {
+//        super.onContainerClosed(playerIn);
+//        IWorldPosCallable.of(world, blockPos).consume((p_lambda$onContainerClosed$1_2_, p_lambda$onContainerClosed$1_3_) -> {
+//            this.clearContainer(playerIn, playerIn.world, contentInventory);
+//        });
+//        this.contentInventory.removeStackFromSlot(0);
+//    }
+
+
+}
