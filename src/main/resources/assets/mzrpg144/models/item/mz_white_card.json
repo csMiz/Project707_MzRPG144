@@ -1,0 +1,6 @@
+{
+  "parent": "item/generated",
+  "textures": {
+    "layer0": "mzrpg144:item/mz_white_card"
+  }
+}

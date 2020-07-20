@@ -3,8 +3,15 @@ package com.mizfrank.mzrpg144;
 import com.mizfrank.mzrpg144.entity.IMzSpecialty;
 import com.mizfrank.mzrpg144.entity.MzSpecialty;
 import com.mizfrank.mzrpg144.entity.MzSpecialtyProvider;
+import com.mizfrank.mzrpg144.item.ItemCollection;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.FontRenderer;
+import net.minecraft.client.gui.IngameGui;
 import net.minecraft.entity.player.PlayerEntity;
+import net.minecraft.entity.player.ServerPlayerEntity;
 import net.minecraft.util.text.StringTextComponent;
+import net.minecraftforge.client.event.RenderGameOverlayEvent;
+import net.minecraftforge.common.util.LazyOptional;
 import net.minecraftforge.event.entity.player.PlayerEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 
@@ -15,21 +22,32 @@ public class EventHandler {
     {
         PlayerEntity player = event.getPlayer();
         IMzSpecialty playerSpec = player.getCapability(MzSpecialtyProvider.MZ_SPEC_CAP, null).orElse(null);
+        // Sync spec from server to client
+        Networking.sendToClient(playerSpec.getAllSpecDataArray(), (ServerPlayerEntity) player);
 
-        if (playerSpec == null){
-            String message = String.format("Error: Spec is NULL!");
-            player.sendMessage(new StringTextComponent(message));
-        }
-        else{
-            String message = "Your specialty is ";
-            message += MzSpecialty.cvt_specInt_specStr(playerSpec.getFirstSpecType());
-            player.sendMessage(new StringTextComponent(message));
-        }
+        String message = "Your specialty is ";
+        message += MzSpecialty.cvt_specInt_specStr(playerSpec.getMajorType());
+        player.sendMessage(new StringTextComponent(message));
     }
 
     @SubscribeEvent
     public void onPlayerRespawn(PlayerEvent.PlayerRespawnEvent event){
         event.getPlayer().sendMessage(new StringTextComponent("RES!"));
+    }
+
+    @SubscribeEvent
+    public void RenderGameOverlayEvent(RenderGameOverlayEvent event){
+        if (event.getType() == RenderGameOverlayEvent.ElementType.HOTBAR){
+            if (Minecraft.getInstance().player.getHeldItemMainhand().getItem() == ItemCollection.MZ_SWORD_IRON.get()){
+                IngameGui gui = Minecraft.getInstance().ingameGUI;
+                FontRenderer fontRenderer = Minecraft.getInstance().fontRenderer;
+                int centerX = (int)(Minecraft.getInstance().mainWindow.getScaledWidth() / 2);
+                int centerY = (int)(Minecraft.getInstance().mainWindow.getScaledHeight() / 2);
+                gui.drawCenteredString(fontRenderer, "Archer cannot use sword",
+                        centerX, (int)(centerY * 1.4), 0xff3333);
+            }
+        }
+
     }
 
 //
@@ -80,9 +98,17 @@ public class EventHandler {
     {
         event.getPlayer().sendMessage(new StringTextComponent("CLONE SPEC DATA!"));
         PlayerEntity player = event.getPlayer();
-        IMzSpecialty newSpec = player.getCapability(MzSpecialtyProvider.MZ_SPEC_CAP, null).orElse(new MzSpecialty());
-        IMzSpecialty oldSpec = event.getOriginal().getCapability(MzSpecialtyProvider.MZ_SPEC_CAP, null).orElse(new MzSpecialty());
+        IMzSpecialty newSpec = player.getCapability(MzSpecialtyProvider.MZ_SPEC_CAP, null).orElse(null);
+        IMzSpecialty oldSpec = event.getOriginal().getCapability(MzSpecialtyProvider.MZ_SPEC_CAP, null)
+                .orElseThrow(() -> new IllegalArgumentException("OldSpec lost!"));
         newSpec.setSpec(oldSpec.getAllSpecData());
+
+        // Sync spec from server to client
+        Networking.sendToClient(newSpec.getAllSpecDataArray(), (ServerPlayerEntity) player);
+
+        String message = "Your specialty is ";
+        message += MzSpecialty.cvt_specInt_specStr(newSpec.getMajorType());
+        player.sendMessage(new StringTextComponent(message));
     }
 
 }

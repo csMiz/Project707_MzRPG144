@@ -1,0 +1,19 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    "xxx",
+    "xox",
+    "xxx"
+  ],
+  "key": {
+    "x": {
+      "item": "minecraft:paper"
+    },
+    "o": {
+      "item": "minecraft:name_tag"
+    }
+  },
+  "result": {
+    "item": "mzrpg144:mz_white_card"
+  }
+}

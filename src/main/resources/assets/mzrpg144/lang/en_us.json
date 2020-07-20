@@ -3,6 +3,7 @@
 
   "item.mzrpg144.mz_gem": "Coin",
   "item.mzrpg144.mz_sword_iron": "Iron Sword",
+  "item.mzrpg144.mz_white_card": "White Card",
 
   "block.mzrpg144.mz_gem_block": "Coin Box",
   "block.mzrpg144.mz_medal_box": "Medal Box",
@@ -13,5 +14,11 @@
   "txt.spec_warrior": "Warrior",
   "txt.spec_archer": "Archer",
   "txt.spec_mage": "Mage",
-  "txt.spec_warrior_desc": "A balanced melee specialty, with good attack and defense value.## ##Can use swords, great swords and axes."
+  "txt.spec_warrior_desc": "A balanced melee specialty, with good attack and defense value.## ##Can use swords, great swords and axes.",
+  "txt.spec_archer_desc": "Good at long-range attacks. ##Low defense value. ## ##Can use bows and crossbows.",
+  "txt.spec_mage_desc": "Medium-range specialty with low defense value. ##Can use various magic and effects.",
+  "txt.spec_update_ok": "Specialty update succeed!",
+
+
+  "end": "end"
 }

@@ -77,10 +77,10 @@ public class MzRPG {
         LOGGER.info("HELLO FROM PREINIT");
         LOGGER.info("DIRT BLOCK >> {}", Blocks.DIRT.getRegistryName());
 
-        CapabilityManager.INSTANCE.register(IMzSpecialty.class, new MzSpecialtyStorage(), new MzSpecialtyFactory());
+        CapabilityManager.INSTANCE.register(IMzSpecialty.class, new MzSpecialtyStorage(), MzSpecialty::new);
 
-        //MinecraftForge.EVENT_BUS.register(CapabilityHandler.class);
-        //MinecraftForge.EVENT_BUS.register(EventHandler.class);
+        Networking.registerMessages();
+
     }
 
     private void doClientStuff(final FMLClientSetupEvent event) {

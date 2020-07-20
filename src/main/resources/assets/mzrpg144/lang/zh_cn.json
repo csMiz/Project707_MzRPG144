@@ -3,6 +3,7 @@
 
   "item.mzrpg144.mz_gem": "硬币",
   "item.mzrpg144.mz_sword_iron": "铁剑",
+  "item.mzrpg144.mz_white_card": "白卡",
 
   "block.mzrpg144.mz_gem_block": "硬币箱",
   "block.mzrpg144.mz_medal_box": "荣誉箱",
@@ -13,5 +14,11 @@
   "txt.spec_warrior": "勇者",
   "txt.spec_archer": "弓手",
   "txt.spec_mage": "术士",
-  "txt.spec_warrior_desc": "平衡的近战职业，拥有不错的攻击力和##守备力。## ##能使用剑，大剑和斧。"
+  "txt.spec_warrior_desc": "平衡的近战职业，拥有不错的攻击力和守备力。## ##能使用剑，大剑和斧。",
+  "txt.spec_archer_desc": "擅长远程攻击，守备力较低。## ##能使用弓和弩。",
+  "txt.spec_mage_desc": "中程距离职业，守备力较低。## ##能使用各种魔法和效果。",
+  "txt.spec_update_ok": "职业已更新！",
+
+
+  "end": "end"
 }

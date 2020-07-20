@@ -28,6 +28,7 @@ public class ItemCollection {
     public static final RegistryObject<Item> MZ_SWORD_IRON = ITEMS.register("mz_sword_iron", () -> new MzSwordIron(
             new MzSwordIron.Properties().group(MzRPG.MZ_ITEMGROUP)));
 
+    public static final RegistryObject<Item> MZ_WHITE_CARD = ITEMS.register("mz_white_card", () -> new MzWhiteCard());
 
 
 }

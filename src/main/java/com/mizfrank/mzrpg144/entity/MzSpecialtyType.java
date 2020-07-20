@@ -7,7 +7,7 @@ public class MzSpecialtyType {
      * 1-ARCHER
      * 2-MAGE
      * */
-    public int SpecType = -1;
+    public int specType = -1;
 
     /**
      * 0 - 99 E
@@ -17,16 +17,16 @@ public class MzSpecialtyType {
      * 400 - 499 A
      * 500+ S
      * */
-    public int SpecLevel = 0;
+    public int specLevel = 0;
 
-    public int SpecEXP = 0;
+    public int specEXP = 0;
 
     public MzSpecialtyType(int typeId){
-        SpecType = typeId;
+        specType = typeId;
     }
 
     public void updateLevelFromEXP(){
-        SpecLevel = (int)(100.0 * Math.log((SpecEXP + 1.0) / 5.0)/Math.log(2));  // 100?
+        specLevel = (int)(100.0 * Math.log((specEXP + 1.0) / 5.0)/Math.log(2));  // 100?
 
     }
 

@@ -1,5 +1,8 @@
 package com.mizfrank.mzrpg144.block;
 
+import com.mizfrank.mzrpg144.Networking;
+import com.mizfrank.mzrpg144.entity.IMzSpecialty;
+import com.mizfrank.mzrpg144.entity.MzSpecialtyProvider;
 import net.minecraft.block.*;
 import net.minecraft.block.material.Material;
 import net.minecraft.entity.player.PlayerEntity;
@@ -30,6 +33,9 @@ public class MzMedalBox extends HorizontalBlock {
     public boolean onBlockActivated(BlockState state, World worldIn, BlockPos blockPos, PlayerEntity player, Hand hand, BlockRayTraceResult hit) {
         if (!worldIn.isRemote) {
             INamedContainerProvider container = state.getContainer(worldIn, blockPos);
+
+            // can get playerSpec here!
+
             player.openContainer(container);
             //NetworkHooks.openGui((ServerPlayerEntity) player, container, blockPos);
         }
