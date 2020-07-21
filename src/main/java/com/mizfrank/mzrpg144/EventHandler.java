@@ -38,14 +38,14 @@ public class EventHandler {
     @SubscribeEvent
     public void RenderGameOverlayEvent(RenderGameOverlayEvent event){
         if (event.getType() == RenderGameOverlayEvent.ElementType.HOTBAR){
-            if (Minecraft.getInstance().player.getHeldItemMainhand().getItem() == ItemCollection.MZ_SWORD_IRON.get()){
-                IngameGui gui = Minecraft.getInstance().ingameGUI;
-                FontRenderer fontRenderer = Minecraft.getInstance().fontRenderer;
-                int centerX = (int)(Minecraft.getInstance().mainWindow.getScaledWidth() / 2);
-                int centerY = (int)(Minecraft.getInstance().mainWindow.getScaledHeight() / 2);
-                gui.drawCenteredString(fontRenderer, "Archer cannot use sword",
-                        centerX, (int)(centerY * 1.4), 0xff3333);
-            }
+//            if (Minecraft.getInstance().player.getHeldItemMainhand().getItem() == ItemCollection.MZ_SWORD_IRON.get()){
+//                IngameGui gui = Minecraft.getInstance().ingameGUI;
+//                FontRenderer fontRenderer = Minecraft.getInstance().fontRenderer;
+//                int centerX = (int)(Minecraft.getInstance().mainWindow.getScaledWidth() / 2);
+//                int centerY = (int)(Minecraft.getInstance().mainWindow.getScaledHeight() / 2);
+//                gui.drawCenteredString(fontRenderer, "Archer cannot use sword",
+//                        centerX, (int)(centerY * 1.4), 0xff3333);
+//            }
         }
 
     }

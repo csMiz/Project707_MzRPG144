@@ -28,7 +28,7 @@ public class CapabilityCollection {
 
     @SubscribeEvent
     public void onEntityItemPickup(EntityItemPickupEvent event) {
-        event.getPlayer().sendMessage(new StringTextComponent("PICK!"));
+
     }
 
 }

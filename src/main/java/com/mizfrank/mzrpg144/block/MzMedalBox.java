@@ -26,7 +26,7 @@ import net.minecraftforge.fml.network.NetworkHooks;
 public class MzMedalBox extends HorizontalBlock {
 
     public MzMedalBox() {
-        super(Properties.create(Material.WOOD).sound(SoundType.WOOD));
+        super(Properties.create(Material.WOOD).sound(SoundType.WOOD).hardnessAndResistance(2.5f,2.5f));
 
     }
 
