@@ -17,9 +17,9 @@ public class MzSwordEnchant {
         // TODO
     }
 
-    public boolean tryEnchant(int itemIdx){
+    public int tryEnchant(int itemIdx){
         // TODO
-        return true;
+        return 0;
     }
 
     public HashMap<Integer, Float> getAllEnchant(){

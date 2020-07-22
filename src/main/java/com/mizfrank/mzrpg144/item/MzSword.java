@@ -22,6 +22,7 @@ import net.minecraft.world.World;
 
 import javax.annotation.Nullable;
 import java.util.List;
+import java.util.function.Consumer;
 
 public abstract class MzSword extends TieredItem {
 
@@ -75,19 +76,45 @@ public abstract class MzSword extends TieredItem {
         return true;
     }
 
+    @Override
+    public <T extends LivingEntity> int damageItem(ItemStack stack, int amount, T entity, Consumer<T> onBroken) {
+        int durRemain = stack.getMaxDamage() - stack.getDamage();
+        CompoundNBT tags = stack.getTag();
+        float decDur = tags.getFloat("mz_dec_dur");
+        float tmpDamage = amount * decDur;
+        if (durRemain < tmpDamage){
+            // break item
+            int tmpStatus = tags.getInt("mz_status");
+            if (tmpStatus % 2 != 1){
+                tmpStatus += 1;
+                tags.putInt("mz_status", tmpStatus);
+            }
+            return 0;
+        }
+        else{
+            return (int)(tmpDamage);
+        }
+    }
+
     public boolean canHarvestBlock(BlockState targetBlockState) {
         return targetBlockState.getBlock() == Blocks.COBWEB;
     }
 
     @Override
+    public void onCreated(ItemStack itemStack, World world, PlayerEntity playerEntity) {
+        super.onCreated(itemStack, world, playerEntity);
+        CompoundNBT defaultNBT = new CompoundNBT();
+        defaultNBT.putInt("mz_weight", 0);
+        defaultNBT.putFloat("mz_dec_dur", 1.0f);
+        defaultNBT.putInt("mz_status", 0);  // 0-normal 1-break 2-specialty limit 4-?
+        itemStack.setTag(defaultNBT);
+    }
+
+
+    @Override
     public Multimap<String, AttributeModifier> getAttributeModifiers(EquipmentSlotType slot, ItemStack stack) {
         CompoundNBT nbt = stack.getOrCreateTag();
-        if (nbt.contains("weight")){
-            swordWeight = nbt.getInt("weight");
-        }
-        else{
-            swordWeight = 0;
-        }
+        swordWeight = nbt.getInt("mz_weight");
 
         Multimap<String, AttributeModifier> mm = HashMultimap.<String, AttributeModifier>create();
         if (slot == EquipmentSlotType.MAINHAND) {
