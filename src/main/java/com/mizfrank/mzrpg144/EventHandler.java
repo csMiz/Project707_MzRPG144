@@ -9,9 +9,12 @@ import net.minecraft.client.gui.FontRenderer;
 import net.minecraft.client.gui.IngameGui;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.entity.player.ServerPlayerEntity;
+import net.minecraft.util.DamageSource;
 import net.minecraft.util.text.StringTextComponent;
 import net.minecraftforge.client.event.RenderGameOverlayEvent;
 import net.minecraftforge.common.util.LazyOptional;
+import net.minecraftforge.event.entity.player.AttackEntityEvent;
+import net.minecraftforge.event.entity.player.ItemTooltipEvent;
 import net.minecraftforge.event.entity.player.PlayerEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 
@@ -35,6 +38,7 @@ public class EventHandler {
         event.getPlayer().sendMessage(new StringTextComponent("RES!"));
     }
 
+
     @SubscribeEvent
     public void RenderGameOverlayEvent(RenderGameOverlayEvent event){
         if (event.getType() == RenderGameOverlayEvent.ElementType.HOTBAR){
@@ -50,6 +54,12 @@ public class EventHandler {
 
     }
 
+    @SubscribeEvent
+    public void eve(ItemTooltipEvent event){
+
+        event.getToolTip().clear();
+        event.getToolTip().add(new StringTextComponent("replaced tooltip!"));
+    }
 //
 //    @SubscribeEvent
 //    public void onPlayerSleep(PlayerSleepInBedEvent event)

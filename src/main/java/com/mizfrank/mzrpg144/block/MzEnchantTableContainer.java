@@ -1,6 +1,8 @@
 package com.mizfrank.mzrpg144.block;
 
 
+import com.mizfrank.mzrpg144.item.MzItemEnchant.MzSwordEnchant;
+import com.mizfrank.mzrpg144.item.MzSword;
 import net.minecraft.block.AnvilBlock;
 import net.minecraft.block.BlockState;
 import net.minecraft.entity.player.PlayerEntity;
@@ -76,7 +78,7 @@ public class MzEnchantTableContainer extends Container {
                 float breakRnd = playerEntity1.getRNG().nextFloat() * 100.0f;
                 if (breakRnd < breakRate){
                     float decDur = itemStack.getOrCreateTag().getFloat("mz_dec_dur");  // default = 1.0
-                    float newDecDur = decDur * (1.0f + playerEntity1.getRNG().nextFloat());  // -> x1.0 to x2.0
+                    float newDecDur = decDur + (2.0f * playerEntity1.getRNG().nextFloat());  // -> +0.0 to +2.0
                     itemStack.setTagInfo("mz_dec_dur", new FloatNBT(newDecDur));
                 }
                 // clear slot 1
@@ -109,13 +111,47 @@ public class MzEnchantTableContainer extends Container {
     public void onCraftMatrixChanged(IInventory inventory) {
         super.onCraftMatrixChanged(inventory);
         if (inventory == inputSlotEquip || inventory == inputSlotMat) {
-            updateRepairOutput();
+            updateEnchantOutput();
         }
     }
 
-    public void updateRepairOutput() {
+    public void updateEnchantOutput() {
         // update result slot
-        // TODO
+        ItemStack equip = inputSlotEquip.getStackInSlot(0);
+        ItemStack mat = inputSlotMat.getStackInSlot(0);
+        if (equip.isEmpty() || mat.isEmpty()){
+            outputSlot.setInventorySlotContents(0, ItemStack.EMPTY);
+        }
+        else{
+            ItemStack tmpResult = getEnchantResultSlot(equip, mat);
+            outputSlot.setInventorySlotContents(0, tmpResult);
+        }
+
+        detectAndSendChanges();
+    }
+
+    public ItemStack getEnchantResultSlot(ItemStack equip, ItemStack mat){
+        CompoundNBT nbt = equip.getTag();
+        int equipType = -1;
+        if (nbt != null){
+            if (nbt.contains("mz_type")){
+                equipType = nbt.getInt("mz_type");
+            }
+        }
+        ItemStack result = ItemStack.EMPTY;
+        if (equipType == 1){
+            MzSwordEnchant srcEnchant = new MzSwordEnchant(nbt.getIntArray("mz_enchant"));
+            srcEnchant.prepare(mat.getItem());
+            boolean passElement = srcEnchant.passElement;
+            if (passElement){
+                // set fail rate
+                breakRate = srcEnchant.breakRate;
+                // and
+                result = equip.copy();
+                result.setTagInfo("mz_enchant", srcEnchant.toNBTIntArray());
+            }
+        }
+        return result;
     }
 
     private void layoutPlayerInventorySlots(int leftCol, int topRow) {

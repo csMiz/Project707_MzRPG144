@@ -1,5 +1,7 @@
 package com.mizfrank.mzrpg144.item.MzItemEnchant;
 
+import net.minecraft.item.Item;
+import net.minecraft.nbt.IntArrayNBT;
 import net.minecraft.potion.Effect;
 
 import java.util.HashMap;
@@ -13,13 +15,15 @@ public class MzSwordEnchant {
 
     private Set<Integer> element = new HashSet<>();
 
+    public boolean passElement = true;
+    public float breakRate = 0.0f;
+
     public MzSwordEnchant(){
         // TODO
     }
 
-    public int tryEnchant(int itemIdx){
+    public MzSwordEnchant(int[] data){
         // TODO
-        return 0;
     }
 
     public HashMap<Integer, Float> getAllEnchant(){
@@ -42,7 +46,14 @@ public class MzSwordEnchant {
         return 0.0f;
     }
 
+    public void prepare(Item mat){
+        // TODO
+    }
 
+    public IntArrayNBT toNBTIntArray(){
+        // TODO
+        return null;
+    }
 
     public static Effect cvt_enchant_effect(int enchantIdx, float enchantLevel){
         // TODO

@@ -8,14 +8,20 @@ import net.minecraft.block.BlockState;
 import net.minecraft.block.Blocks;
 import net.minecraft.block.material.Material;
 import net.minecraft.client.util.ITooltipFlag;
+import net.minecraft.entity.Entity;
 import net.minecraft.entity.LivingEntity;
 import net.minecraft.entity.SharedMonsterAttributes;
+import net.minecraft.entity.ai.attributes.AttributeMap;
 import net.minecraft.entity.ai.attributes.AttributeModifier;
+import net.minecraft.entity.ai.attributes.IAttributeInstance;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.inventory.EquipmentSlotType;
 import net.minecraft.item.*;
 import net.minecraft.nbt.CompoundNBT;
 import net.minecraft.tags.BlockTags;
+import net.minecraft.util.ActionResultType;
+import net.minecraft.util.DamageSource;
+import net.minecraft.util.Hand;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.text.ITextComponent;
 import net.minecraft.world.World;
@@ -59,8 +65,8 @@ public abstract class MzSword extends TieredItem {
         }
     }
 
-    public boolean hitEntity(ItemStack self, LivingEntity p_77644_2_, LivingEntity p_77644_3_) {
-        self.damageItem(1, p_77644_3_, (p_220045_0_) -> {
+    public boolean hitEntity(ItemStack self, LivingEntity enemy, LivingEntity playerSelf) {
+        self.damageItem(1, playerSelf, (p_220045_0_) -> {
             p_220045_0_.sendBreakAnimation(EquipmentSlotType.MAINHAND);
         });
         return true;
@@ -101,19 +107,17 @@ public abstract class MzSword extends TieredItem {
     }
 
     @Override
-    public void onCreated(ItemStack itemStack, World world, PlayerEntity playerEntity) {
-        super.onCreated(itemStack, world, playerEntity);
-        CompoundNBT defaultNBT = new CompoundNBT();
-        defaultNBT.putInt("mz_weight", 0);
-        defaultNBT.putFloat("mz_dec_dur", 1.0f);
-        defaultNBT.putInt("mz_status", 0);  // 0-normal 1-break 2-specialty limit 4-?
-        itemStack.setTag(defaultNBT);
-    }
-
-
-    @Override
     public Multimap<String, AttributeModifier> getAttributeModifiers(EquipmentSlotType slot, ItemStack stack) {
-        CompoundNBT nbt = stack.getOrCreateTag();
+        CompoundNBT nbt = stack.getTag();
+        if (nbt == null){
+            nbt = new CompoundNBT();
+            nbt.putInt("mz_type", 1);  // 1-sword
+            nbt.putInt("mz_weight", 0);
+            nbt.putFloat("mz_dec_dur", 1.0f);
+            nbt.putInt("mz_status", 0);  // 0-normal 1-break 2-specialty limit 4-?
+            nbt.putIntArray("mz_enchant", new int[0]);
+            stack.setTag(nbt);
+        }
         swordWeight = nbt.getInt("mz_weight");
 
         Multimap<String, AttributeModifier> mm = HashMultimap.<String, AttributeModifier>create();
