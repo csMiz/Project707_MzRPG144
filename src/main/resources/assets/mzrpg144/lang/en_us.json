@@ -19,6 +19,8 @@
   "txt.spec_mage_desc": "Medium-range specialty with low defense value. ##Can use various magic and effects.",
   "txt.spec_update_ok": "Specialty update succeed!",
 
+  "txt.tag_atk": "Damage: ",
+  "txt.mz_sword_iron_desc": "A common sword in MzRPG mod.",
 
   "end": "end"
 }

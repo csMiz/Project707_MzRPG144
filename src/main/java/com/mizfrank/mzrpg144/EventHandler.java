@@ -4,15 +4,25 @@ import com.mizfrank.mzrpg144.entity.IMzSpecialty;
 import com.mizfrank.mzrpg144.entity.MzSpecialty;
 import com.mizfrank.mzrpg144.entity.MzSpecialtyProvider;
 import com.mizfrank.mzrpg144.item.ItemCollection;
+import com.mizfrank.mzrpg144.item.MzSword;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.FontRenderer;
 import net.minecraft.client.gui.IngameGui;
+import net.minecraft.enchantment.EnchantmentHelper;
+import net.minecraft.entity.Entity;
+import net.minecraft.entity.LivingEntity;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.entity.player.ServerPlayerEntity;
+import net.minecraft.item.ItemStack;
+import net.minecraft.particles.ParticleTypes;
+import net.minecraft.stats.Stats;
 import net.minecraft.util.DamageSource;
+import net.minecraft.util.SoundEvents;
 import net.minecraft.util.text.StringTextComponent;
+import net.minecraft.world.server.ServerWorld;
 import net.minecraftforge.client.event.RenderGameOverlayEvent;
 import net.minecraftforge.common.util.LazyOptional;
+import net.minecraftforge.event.entity.living.LivingSetAttackTargetEvent;
 import net.minecraftforge.event.entity.player.AttackEntityEvent;
 import net.minecraftforge.event.entity.player.ItemTooltipEvent;
 import net.minecraftforge.event.entity.player.PlayerEvent;
@@ -57,9 +67,72 @@ public class EventHandler {
     @SubscribeEvent
     public void eve(ItemTooltipEvent event){
 
-        event.getToolTip().clear();
-        event.getToolTip().add(new StringTextComponent("replaced tooltip!"));
+        //event.getToolTip().clear();
+        //event.getToolTip().add(new StringTextComponent("replaced tooltip!"));
     }
+
+    @SubscribeEvent
+    public void onAttackEntityEvent(AttackEntityEvent event){
+        Entity target = event.getTarget();
+        PlayerEntity player = event.getPlayer();
+        ItemStack weapon = player.getHeldItemMainhand();
+        DamageSource damageSource = DamageSource.causePlayerDamage(player);
+        if (weapon.getItem() instanceof MzSword && target instanceof LivingEntity){
+            float targetHP_pre = 0.0f;
+
+            // 冷却条修正
+            float coolVal = player.getCooledAttackStrength(0.5F);
+            float coolMul = 0.2F + coolVal * coolVal * 0.8F;
+            player.resetCooldown();
+
+            // 武器伤害
+            float[] dmgInfo = MzSword.getAttackValue(weapon, coolMul);
+            float dmg = dmgInfo[0];
+
+            // 播放声音
+            if (dmgInfo[1] > 0.5f){
+                player.world.playSound((PlayerEntity)null, player.posX, player.posY, player.posZ, SoundEvents.ENTITY_PLAYER_ATTACK_CRIT, player.getSoundCategory(), 1.0F, 1.0F);
+                player.onCriticalHit(target);    // Crt默认事件
+            }
+            else if (coolMul > 0.9f){
+                player.world.playSound((PlayerEntity)null, player.posX, player.posY, player.posZ, SoundEvents.ENTITY_PLAYER_ATTACK_STRONG, player.getSoundCategory(), 1.0F, 1.0F);
+            }
+            else{
+                player.world.playSound((PlayerEntity)null, player.posX, player.posY, player.posZ, SoundEvents.ENTITY_PLAYER_ATTACK_WEAK, player.getSoundCategory(), 1.0F, 1.0F);
+            }
+
+            // 对方反击效果
+            // Vanilla荆棘
+            targetHP_pre = ((LivingEntity)target).getHealth();
+            EnchantmentHelper.applyThornEnchantments((LivingEntity)target, player);
+
+            // 武器效果
+            // TODO
+
+
+
+            player.setLastAttackedEntity(target);
+            boolean attackResult = target.attackEntityFrom(damageSource, dmg);
+            if (attackResult){
+                // 伤害粒子效果
+                float actualDmg = targetHP_pre - ((LivingEntity)target).getHealth();
+                if (player.world instanceof ServerWorld && actualDmg > 2.0F) {
+                    int k = (int)((double)actualDmg * 0.5D);
+                    ((ServerWorld)player.world).spawnParticle(ParticleTypes.DAMAGE_INDICATOR, target.posX, target.posY + (double)(target.getHeight() * 0.5F), target.posZ, k, 0.1D, 0.0D, 0.1D, 0.2D);
+                }
+                player.addExhaustion(0.1F);
+            }
+            else{
+                player.world.playSound((PlayerEntity)null, player.posX, player.posY, player.posZ, SoundEvents.ENTITY_PLAYER_ATTACK_NODAMAGE, player.getSoundCategory(), 1.0F, 1.0F);
+            }
+            // 覆盖Vanilla过程
+            event.setCanceled(true);
+        }
+
+        //这之后会触发 attackTargetEntityWithCurrentItem
+    }
+
+
 //
 //    @SubscribeEvent
 //    public void onPlayerSleep(PlayerSleepInBedEvent event)

@@ -19,6 +19,8 @@
   "txt.spec_mage_desc": "中程距离职业，守备力较低。## ##能使用各种魔法和效果。",
   "txt.spec_update_ok": "职业已更新！",
 
+  "txt.tag_atk": "攻击伤害: ",
+  "txt.mz_sword_iron_desc": "常见的铁剑，便宜又实用。",
 
   "end": "end"
 }

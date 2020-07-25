@@ -14,6 +14,7 @@ import net.minecraft.entity.SharedMonsterAttributes;
 import net.minecraft.entity.ai.attributes.AttributeMap;
 import net.minecraft.entity.ai.attributes.AttributeModifier;
 import net.minecraft.entity.ai.attributes.IAttributeInstance;
+import net.minecraft.entity.item.ItemEntity;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.inventory.EquipmentSlotType;
 import net.minecraft.item.*;
@@ -34,19 +35,29 @@ public abstract class MzSword extends TieredItem {
 
     protected float basicAtk;
     protected float basicAtkSpeed;
+    protected float basicAtkFluc;
+    protected float basicCrt;
     protected int swordWeight = 0;
     protected MzSwordEnchant enchant = new MzSwordEnchant();
 
 
-    protected MzSword(IItemTier material, Properties properties, float inAtk, float inAtkSpeed) {
+    protected MzSword(IItemTier material, Properties properties, float inAtk, float inAtkSpeed, float inAtkFluc, float inCrt) {
         super(material, properties);
         basicAtk = inAtk;
         basicAtkSpeed = inAtkSpeed;
+        basicAtkFluc = inAtkFluc;
+        basicCrt = inCrt;
     }
 
-    public abstract float getAttackDamage();
+    public abstract float getPlainDamage();
 
-    public abstract float getAttackSpeed();
+    public abstract float getPlainSpeed();
+
+    public abstract float getPlainFluc();
+
+    public abstract float getPlainCrt();
+
+
 
     public boolean canPlayerBreakBlockWhileHolding(BlockState p_195938_1_, World p_195938_2_, BlockPos p_195938_3_,
                                                    PlayerEntity p_195938_4_) {
@@ -65,11 +76,12 @@ public abstract class MzSword extends TieredItem {
         }
     }
 
+    // attackTargetEntityWithCurrentItem内部会调用此方法
     public boolean hitEntity(ItemStack self, LivingEntity enemy, LivingEntity playerSelf) {
         self.damageItem(1, playerSelf, (p_220045_0_) -> {
             p_220045_0_.sendBreakAnimation(EquipmentSlotType.MAINHAND);
         });
-        return true;
+        return true;  // True就会记录到成就里
     }
 
     public boolean onBlockDestroyed(ItemStack self, World p_179218_2_, BlockState targetBlockState,
@@ -116,21 +128,48 @@ public abstract class MzSword extends TieredItem {
             nbt.putFloat("mz_dec_dur", 1.0f);
             nbt.putInt("mz_status", 0);  // 0-normal 1-break 2-specialty limit 4-?
             nbt.putIntArray("mz_enchant", new int[0]);
+            nbt.putFloat("mz_atk", basicAtk);
+            nbt.putFloat("mz_atkspd", basicAtkSpeed);
+            nbt.putFloat("mz_atkfluc", basicAtkFluc);
+            nbt.putFloat("mz_crt", basicAtkFluc);
             stack.setTag(nbt);
         }
         swordWeight = nbt.getInt("mz_weight");
+        nbt.putFloat("mz_atk", getPlainDamage());
+        nbt.putFloat("mz_atkspd", getPlainSpeed());
+        nbt.putFloat("mz_atkfluc", getPlainFluc());
+        nbt.putFloat("mz_crt", getPlainCrt());
 
         Multimap<String, AttributeModifier> mm = HashMultimap.<String, AttributeModifier>create();
         if (slot == EquipmentSlotType.MAINHAND) {
-            mm.put(SharedMonsterAttributes.ATTACK_DAMAGE.getName(), new AttributeModifier(ATTACK_DAMAGE_MODIFIER,
-                    "Weapon modifier", getAttackDamage() - 1.0,
-                    AttributeModifier.Operation.ADDITION));
+            // 不使用Vanilla伤害计算
+//            mm.put(SharedMonsterAttributes.ATTACK_DAMAGE.getName(), new AttributeModifier(ATTACK_DAMAGE_MODIFIER,
+//                    "Weapon modifier", getAttackDamage() - 1.0,
+//                    AttributeModifier.Operation.ADDITION));
             mm.put(SharedMonsterAttributes.ATTACK_SPEED.getName(), new AttributeModifier(ATTACK_SPEED_MODIFIER,
-                    "Weapon modifier", getAttackSpeed() - 4.0,
+                    "Weapon modifier", getPlainSpeed() - 4.0,
                     AttributeModifier.Operation.ADDITION));
         }
         return mm;
     }
 
+    public static float[] getAttackValue(ItemStack item, float coolMul){
+        CompoundNBT tags = item.getTag();
+        float basicAtk = tags.getFloat("mz_atk");
+        float basicAtkFluc = tags.getFloat("mz_atkfluc");
+        float flucAtk = (float)(basicAtk + 2.0 * (Math.random() - 0.5) * basicAtkFluc);
+
+        float hasCrt = 0.0f;
+        if (coolMul > 0.9f){
+            float basicCrt = tags.getFloat("mz_crt");
+            if (Math.random() < basicCrt){
+                hasCrt = 1.0f;
+                flucAtk *= 3.0f;
+            }
+        }
+        flucAtk *= coolMul;
+
+        return new float[]{ flucAtk, hasCrt };
+    }
 
 }
