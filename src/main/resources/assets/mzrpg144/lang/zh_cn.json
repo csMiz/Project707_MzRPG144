@@ -20,7 +20,10 @@
   "txt.spec_update_ok": "职业已更新！",
 
   "txt.tag_atk": "攻击伤害: ",
+  "txt.tag_atkcrt": "暴击率: ",
   "txt.mz_sword_iron_desc": "常见的铁剑，便宜又实用。",
+  "txt.mz_sword_gold_desc": "纯金打造，金光闪闪。",
+
 
   "end": "end"
 }

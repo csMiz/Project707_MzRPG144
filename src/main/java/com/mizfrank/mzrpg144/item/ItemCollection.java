@@ -2,9 +2,10 @@ package com.mizfrank.mzrpg144.item;
 
 import com.mizfrank.mzrpg144.MzRPG;
 import com.mizfrank.mzrpg144.block.BlockCollection;
+import com.mizfrank.mzrpg144.item.MzItemWeapon.MzBow.MzBowWood;
+import com.mizfrank.mzrpg144.item.MzItemWeapon.MzSword.MzSwordIron;
 import net.minecraft.item.BlockItem;
 import net.minecraft.item.Item;
-import net.minecraft.item.ItemGroup;
 import net.minecraftforge.fml.RegistryObject;
 import net.minecraftforge.registries.DeferredRegister;
 import net.minecraftforge.registries.ForgeRegistries;
@@ -25,10 +26,12 @@ public class ItemCollection {
     public static final RegistryObject<Item> MZ_MEDAL_BOX = ITEMS.register("mz_medal_box", () -> new BlockItem(
             BlockCollection.MZ_MEDAL_BOX.get(), new Item.Properties().maxStackSize(64).group(MzRPG.MZ_ITEMGROUP)));
 
+    public static final RegistryObject<Item> MZ_WHITE_CARD = ITEMS.register("mz_white_card", () -> new MzWhiteCard());
+
     public static final RegistryObject<Item> MZ_SWORD_IRON = ITEMS.register("mz_sword_iron", () -> new MzSwordIron(
             new MzSwordIron.Properties().group(MzRPG.MZ_ITEMGROUP)));
 
-    public static final RegistryObject<Item> MZ_WHITE_CARD = ITEMS.register("mz_white_card", () -> new MzWhiteCard());
-
+    public static final RegistryObject<Item> MZ_BOW_WOOD = ITEMS.register("mz_bow_wood", () -> new MzBowWood(
+            new MzSwordIron.Properties()));
 
 }

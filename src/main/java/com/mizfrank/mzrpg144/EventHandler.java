@@ -3,11 +3,8 @@ package com.mizfrank.mzrpg144;
 import com.mizfrank.mzrpg144.entity.IMzSpecialty;
 import com.mizfrank.mzrpg144.entity.MzSpecialty;
 import com.mizfrank.mzrpg144.entity.MzSpecialtyProvider;
-import com.mizfrank.mzrpg144.item.ItemCollection;
-import com.mizfrank.mzrpg144.item.MzSword;
-import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.FontRenderer;
-import net.minecraft.client.gui.IngameGui;
+import com.mizfrank.mzrpg144.item.MzItemWeapon.MzBow.MzBow;
+import com.mizfrank.mzrpg144.item.MzItemWeapon.MzSword.MzSword;
 import net.minecraft.enchantment.EnchantmentHelper;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.LivingEntity;
@@ -15,14 +12,12 @@ import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.entity.player.ServerPlayerEntity;
 import net.minecraft.item.ItemStack;
 import net.minecraft.particles.ParticleTypes;
-import net.minecraft.stats.Stats;
 import net.minecraft.util.DamageSource;
 import net.minecraft.util.SoundEvents;
 import net.minecraft.util.text.StringTextComponent;
 import net.minecraft.world.server.ServerWorld;
+import net.minecraftforge.client.event.FOVUpdateEvent;
 import net.minecraftforge.client.event.RenderGameOverlayEvent;
-import net.minecraftforge.common.util.LazyOptional;
-import net.minecraftforge.event.entity.living.LivingSetAttackTargetEvent;
 import net.minecraftforge.event.entity.player.AttackEntityEvent;
 import net.minecraftforge.event.entity.player.ItemTooltipEvent;
 import net.minecraftforge.event.entity.player.PlayerEvent;
@@ -72,7 +67,7 @@ public class EventHandler {
     }
 
     @SubscribeEvent
-    public void onAttackEntityEvent(AttackEntityEvent event){
+    public void onAttackEntity(AttackEntityEvent event){
         Entity target = event.getTarget();
         PlayerEntity player = event.getPlayer();
         ItemStack weapon = player.getHeldItemMainhand();
@@ -132,6 +127,15 @@ public class EventHandler {
         //这之后会触发 attackTargetEntityWithCurrentItem
     }
 
+    @SubscribeEvent
+    public void onFOVUpdate(FOVUpdateEvent event){
+        // Vanilla弓的FOV会从1.0变化到0.85
+        PlayerEntity player = event.getEntity();
+        ItemStack itemStack = player.getHeldItemMainhand();
+        if (itemStack.getItem() instanceof MzBow){
+            // TODO
+        }
+    }
 
 //
 //    @SubscribeEvent

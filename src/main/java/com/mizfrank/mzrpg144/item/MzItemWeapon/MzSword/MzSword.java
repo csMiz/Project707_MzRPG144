@@ -1,4 +1,4 @@
-package com.mizfrank.mzrpg144.item;
+package com.mizfrank.mzrpg144.item.MzItemWeapon.MzSword;
 
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
@@ -24,19 +24,24 @@ import net.minecraft.util.ActionResultType;
 import net.minecraft.util.DamageSource;
 import net.minecraft.util.Hand;
 import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.text.ITextComponent;
+import net.minecraft.util.text.*;
 import net.minecraft.world.World;
 
 import javax.annotation.Nullable;
+import java.text.DecimalFormat;
+import java.text.NumberFormat;
 import java.util.List;
 import java.util.function.Consumer;
 
 public abstract class MzSword extends TieredItem {
 
+    protected TranslationTextComponent txt_atk_desc = new TranslationTextComponent("txt.tag_atk");
+    protected TranslationTextComponent txt_atkCrt_desc = new TranslationTextComponent("txt.tag_atkcrt");
+
     protected float basicAtk;
     protected float basicAtkSpeed;
     protected float basicAtkFluc;
-    protected float basicCrt;
+    protected float basicAtkCrt;
     protected int swordWeight = 0;
     protected MzSwordEnchant enchant = new MzSwordEnchant();
 
@@ -46,7 +51,7 @@ public abstract class MzSword extends TieredItem {
         basicAtk = inAtk;
         basicAtkSpeed = inAtkSpeed;
         basicAtkFluc = inAtkFluc;
-        basicCrt = inCrt;
+        basicAtkCrt = inCrt;
     }
 
     public abstract float getPlainDamage();
@@ -56,7 +61,6 @@ public abstract class MzSword extends TieredItem {
     public abstract float getPlainFluc();
 
     public abstract float getPlainCrt();
-
 
 
     public boolean canPlayerBreakBlockWhileHolding(BlockState p_195938_1_, World p_195938_2_, BlockPos p_195938_3_,
@@ -128,17 +132,20 @@ public abstract class MzSword extends TieredItem {
             nbt.putFloat("mz_dec_dur", 1.0f);
             nbt.putInt("mz_status", 0);  // 0-normal 1-break 2-specialty limit 4-?
             nbt.putIntArray("mz_enchant", new int[0]);
-            nbt.putFloat("mz_atk", basicAtk);
-            nbt.putFloat("mz_atkspd", basicAtkSpeed);
-            nbt.putFloat("mz_atkfluc", basicAtkFluc);
-            nbt.putFloat("mz_crt", basicAtkFluc);
+            int basicAtkInt = (int)(basicAtk * 100);
+            int basicAtkSpeedInt = (int)(basicAtkSpeed * 100);
+            int basicAtkFlucInt = (int)(basicAtkFluc * 100);
+            int basicAtkCrtInt = (int)(basicAtkCrt * 100);
+            nbt.putIntArray("mz_atkinfo", new int[]{basicAtkInt, basicAtkSpeedInt, basicAtkFlucInt, basicAtkCrtInt});
             stack.setTag(nbt);
         }
         swordWeight = nbt.getInt("mz_weight");
-        nbt.putFloat("mz_atk", getPlainDamage());
-        nbt.putFloat("mz_atkspd", getPlainSpeed());
-        nbt.putFloat("mz_atkfluc", getPlainFluc());
-        nbt.putFloat("mz_crt", getPlainCrt());
+        int weightedAtkInt = (int)(getPlainDamage() * 100);
+        int weightedAtkSpeedInt = (int)(getPlainSpeed() * 100);
+        int weightedAtkFlucInt = (int)(getPlainFluc() * 100);
+        int weightedAtkCrtInt = (int)(getPlainCrt() * 100);
+        nbt.putIntArray("mz_atkinfo", new int[]{weightedAtkInt, weightedAtkSpeedInt, weightedAtkFlucInt,
+                weightedAtkCrtInt});
 
         Multimap<String, AttributeModifier> mm = HashMultimap.<String, AttributeModifier>create();
         if (slot == EquipmentSlotType.MAINHAND) {
@@ -153,15 +160,35 @@ public abstract class MzSword extends TieredItem {
         return mm;
     }
 
+    @Override
+    public void addInformation(ItemStack stack, @Nullable World world, List<ITextComponent> list, ITooltipFlag flag) {
+        super.addInformation(stack, world, list, flag);
+        float atk_lb = getPlainDamage() - getPlainFluc();
+        if (atk_lb < 0.0f) { atk_lb = 0.0f; }
+        float atk_ub = getPlainDamage() + getPlainFluc();
+        NumberFormat formatter = new DecimalFormat("0.0");
+        String str_atk_lb = formatter.format(atk_lb);
+        String str_atk_ub = formatter.format(atk_ub);
+        String atkdesc = txt_atk_desc.getUnformattedComponentText() + str_atk_lb + " - " + str_atk_ub;
+        list.add((new StringTextComponent(atkdesc)).setStyle((new Style()).setColor(TextFormatting.DARK_GREEN)));
+
+        float atkCrt = getPlainCrt();
+        String str_atkCrt = formatter.format(atkCrt);
+        String atkCrtdesc = txt_atkCrt_desc.getUnformattedComponentText() + str_atkCrt + "%";
+        list.add((new StringTextComponent(atkCrtdesc)).setStyle((new Style()).setColor(TextFormatting.DARK_GREEN)));
+    }
+
     public static float[] getAttackValue(ItemStack item, float coolMul){
         CompoundNBT tags = item.getTag();
-        float basicAtk = tags.getFloat("mz_atk");
-        float basicAtkFluc = tags.getFloat("mz_atkfluc");
+        int[] atkInfo = tags.getIntArray("mz_atkinfo");
+
+        float basicAtk = atkInfo[0] / 100.0f;
+        float basicAtkFluc = atkInfo[2] / 100.0f;
         float flucAtk = (float)(basicAtk + 2.0 * (Math.random() - 0.5) * basicAtkFluc);
 
         float hasCrt = 0.0f;
         if (coolMul > 0.9f){
-            float basicCrt = tags.getFloat("mz_crt");
+            float basicCrt = atkInfo[3] / 10000.0f;
             if (Math.random() < basicCrt){
                 hasCrt = 1.0f;
                 flucAtk *= 3.0f;

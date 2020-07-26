@@ -20,7 +20,9 @@
   "txt.spec_update_ok": "Specialty update succeed!",
 
   "txt.tag_atk": "Damage: ",
+  "txt.tag_atkcrt": "Critical: ",
   "txt.mz_sword_iron_desc": "A common sword in MzRPG mod.",
+  "txt.mz_sword_gold_desc": "Made of gold, luxury.",
 
   "end": "end"
 }
