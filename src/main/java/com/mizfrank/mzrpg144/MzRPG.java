@@ -5,6 +5,11 @@ import com.mizfrank.mzrpg144.block.ContainerCollection;
 import com.mizfrank.mzrpg144.block.MzMedalBoxScreen;
 import com.mizfrank.mzrpg144.entity.*;
 import com.mizfrank.mzrpg144.item.ItemCollection;
+import com.mizfrank.mzrpg144.item.ItemRendererCollection;
+import com.mizfrank.mzrpg144.item.MzItemWeapon.MzArrow.MzArrowEntity;
+import com.mizfrank.mzrpg144.item.MzItemWeapon.MzArrow.MzArrowEntityEx;
+import com.mizfrank.mzrpg144.item.MzItemWeapon.MzArrow.MzArrowRenderer;
+import com.mizfrank.mzrpg144.item.MzItemWeapon.MzArrow.MzArrowRendererEx;
 import net.minecraft.block.Block;
 import net.minecraft.block.Blocks;
 import net.minecraft.client.gui.ScreenManager;
@@ -15,6 +20,7 @@ import net.minecraftforge.common.capabilities.CapabilityManager;
 import net.minecraftforge.event.RegistryEvent;
 import net.minecraftforge.event.entity.player.PlayerEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
+import net.minecraftforge.fml.client.registry.RenderingRegistry;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.event.lifecycle.FMLClientSetupEvent;
 import net.minecraftforge.fml.event.lifecycle.FMLCommonSetupEvent;
@@ -69,6 +75,8 @@ public class MzRPG {
         MZ_ITEMGROUP = new MzItemGroup(MOD_ID, () -> new ItemStack(ItemCollection.MZ_GEM.get()));
         // register containers
         ContainerCollection.CONTAINERS.register(FMLJavaModLoadingContext.get().getModEventBus());
+
+        ItemRendererCollection.ENTITY_TYPES.register(FMLJavaModLoadingContext.get().getModEventBus());
     }
 
     private void setup(final FMLCommonSetupEvent event)
@@ -88,6 +96,10 @@ public class MzRPG {
         LOGGER.info("Got game settings {}", event.getMinecraftSupplier().get().gameSettings);
 
         ScreenManager.registerFactory(ContainerCollection.MZ_MEDAL_BOX_CONTAINER.get(), MzMedalBoxScreen::new);
+
+
+        RenderingRegistry.registerEntityRenderingHandler(MzArrowEntity.class, MzArrowRenderer::new);
+        RenderingRegistry.registerEntityRenderingHandler(MzArrowEntityEx.class, MzArrowRendererEx::new);
 
     }
 

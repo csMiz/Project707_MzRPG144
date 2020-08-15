@@ -1,0 +1,6 @@
+{
+    "parent": "mzrpg144:item/mz_crsbow_wood",
+    "textures": {
+        "layer0": "mzrpg144:item/mz_crsbow_wood_p2"
+    }
+}

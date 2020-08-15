@@ -3,25 +3,45 @@ package com.mizfrank.mzrpg144;
 import com.mizfrank.mzrpg144.entity.IMzSpecialty;
 import com.mizfrank.mzrpg144.entity.MzSpecialty;
 import com.mizfrank.mzrpg144.entity.MzSpecialtyProvider;
+import com.mizfrank.mzrpg144.item.ItemCollection;
 import com.mizfrank.mzrpg144.item.MzItemWeapon.MzBow.MzBow;
 import com.mizfrank.mzrpg144.item.MzItemWeapon.MzSword.MzSword;
+import com.mojang.blaze3d.platform.GLX;
+import com.mojang.blaze3d.platform.GlStateManager;
+import net.minecraft.client.MainWindow;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.IngameGui;
+import net.minecraft.client.renderer.ActiveRenderInfo;
+import net.minecraft.client.renderer.BufferBuilder;
+import net.minecraft.client.renderer.Tessellator;
+import net.minecraft.client.renderer.vertex.DefaultVertexFormats;
 import net.minecraft.enchantment.EnchantmentHelper;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.LivingEntity;
+import net.minecraft.entity.SharedMonsterAttributes;
+import net.minecraft.entity.ai.attributes.IAttributeInstance;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.entity.player.ServerPlayerEntity;
+import net.minecraft.item.BowItem;
 import net.minecraft.item.ItemStack;
+import net.minecraft.nbt.CompoundNBT;
 import net.minecraft.particles.ParticleTypes;
+import net.minecraft.util.ActionResultType;
 import net.minecraft.util.DamageSource;
+import net.minecraft.util.Hand;
 import net.minecraft.util.SoundEvents;
 import net.minecraft.util.text.StringTextComponent;
 import net.minecraft.world.server.ServerWorld;
+import net.minecraftforge.client.ForgeHooksClient;
 import net.minecraftforge.client.event.FOVUpdateEvent;
 import net.minecraftforge.client.event.RenderGameOverlayEvent;
-import net.minecraftforge.event.entity.player.AttackEntityEvent;
-import net.minecraftforge.event.entity.player.ItemTooltipEvent;
-import net.minecraftforge.event.entity.player.PlayerEvent;
+import net.minecraftforge.common.MinecraftForge;
+import net.minecraftforge.event.entity.living.LivingAttackEvent;
+import net.minecraftforge.event.entity.living.LivingEntityUseItemEvent;
+import net.minecraftforge.event.entity.player.*;
+import net.minecraftforge.eventbus.EventBus;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
+import org.lwjgl.opengl.GL11;
 
 
 public class EventHandler {
@@ -46,7 +66,25 @@ public class EventHandler {
 
     @SubscribeEvent
     public void RenderGameOverlayEvent(RenderGameOverlayEvent event){
-        if (event.getType() == RenderGameOverlayEvent.ElementType.HOTBAR){
+        if (event.getType() == RenderGameOverlayEvent.ElementType.CROSSHAIRS){
+            ItemStack itemStack = Minecraft.getInstance().player.getHeldItemMainhand();
+            if (itemStack.getItem() instanceof MzBow){
+                MzBow item = (MzBow)itemStack.getItem();
+                IngameGui gui = Minecraft.getInstance().ingameGUI;
+                MainWindow mainWindow = Minecraft.getInstance().mainWindow;
+                int centerX = (int)(mainWindow.getScaledWidth() / 2);
+                int centerY = (int)(mainWindow.getScaledHeight() / 2);
+
+                float finalInacc = item.finalInaccFactor;
+                float finalProg = item.pullProgress;
+                finalInacc = finalInacc * 2.5f;
+                renderMzCrosshair1(finalInacc, centerX, centerY);
+                renderMzCrosshair2(finalInacc, finalProg, centerX, centerY);
+                event.setCanceled(true);
+            }
+        }
+
+//        if (event.getType() == RenderGameOverlayEvent.ElementType.HOTBAR){
 //            if (Minecraft.getInstance().player.getHeldItemMainhand().getItem() == ItemCollection.MZ_SWORD_IRON.get()){
 //                IngameGui gui = Minecraft.getInstance().ingameGUI;
 //                FontRenderer fontRenderer = Minecraft.getInstance().fontRenderer;
@@ -55,12 +93,84 @@ public class EventHandler {
 //                gui.drawCenteredString(fontRenderer, "Archer cannot use sword",
 //                        centerX, (int)(centerY * 1.4), 0xff3333);
 //            }
-        }
+//        }
 
     }
 
+    private void renderMzCrosshair1(float inacc, float cx, float cy){
+        GlStateManager.disableTexture();
+        GlStateManager.depthMask(false);
+        Tessellator tessellator = Tessellator.getInstance();
+        BufferBuilder bufferbuilder = tessellator.getBuffer();
+        GL11.glLineWidth(2.0F);
+        bufferbuilder.begin(1, DefaultVertexFormats.POSITION_COLOR);
+
+        // V - cross hair
+        bufferbuilder.pos(cx-5.0, cy+5.0, 0).color(255, 255, 255, 255).endVertex();
+        bufferbuilder.pos(cx, cy, 0).color(255, 255, 255, 255).endVertex();
+
+        bufferbuilder.pos(cx, cy, 0).color(255, 255, 255, 255).endVertex();
+        bufferbuilder.pos(cx+5.0, cy+5.0, 0).color(255, 255, 255, 255).endVertex();
+
+        tessellator.draw();
+
+        // outer
+        GL11.glLineWidth(1.0F);
+        bufferbuilder.begin(1, DefaultVertexFormats.POSITION_COLOR);
+        double lb = inacc;
+        if (lb > 70.0) { lb = 70.0; }
+        double ub = lb + 10.0;
+        bufferbuilder.pos(cx+lb, cy, 0).color(255, 255, 255, 255).endVertex();
+        bufferbuilder.pos(cx+ub, cy, 0).color(255, 255, 255, 255).endVertex();
+
+        bufferbuilder.pos(cx-lb, cy, 0).color(255, 255, 255, 255).endVertex();
+        bufferbuilder.pos(cx-ub, cy, 0).color(255, 255, 255, 255).endVertex();
+
+        bufferbuilder.pos(cx, cy+lb, 0).color(255, 255, 255, 255).endVertex();
+        bufferbuilder.pos(cx, cy+ub, 0).color(255, 255, 255, 255).endVertex();
+
+        tessellator.draw();
+        GlStateManager.depthMask(true);
+        GlStateManager.enableTexture();
+    }
+
+    private void renderMzCrosshair2(float inacc, float inProg, float cx, float cy) {
+        GlStateManager.disableTexture();
+        GlStateManager.depthMask(false);
+        Tessellator tessellator = Tessellator.getInstance();
+        BufferBuilder bufferbuilder = tessellator.getBuffer();
+        GL11.glLineWidth(1.0F);
+        bufferbuilder.begin(1, DefaultVertexFormats.POSITION_COLOR);
+
+        int colorR = (int)((1.0 - inProg) * 155 + 50);
+        int colorG = (int)(inProg * 155 + 50);
+        int colorB = 50;
+        int colorA = 128;
+
+        int count = 25;
+        int drawCount = (int)(25 * inProg);
+        double interval = 2.0 * Math.PI / count;
+        double lb = inacc;
+        if (lb > 70.0) { lb = 70.0; }
+        double ub = lb + 2.0;
+        for (int i = 0; i < drawCount; i++){
+            double alpha = 0.5 * Math.PI - interval * i;
+            if (alpha < 0){ alpha += (2.0*Math.PI); }
+            double nearX = lb * Math.cos(alpha);
+            double nearY = lb * Math.sin(alpha);
+            double farX = ub * Math.cos(alpha);
+            double farY = ub * Math.sin(alpha);
+            bufferbuilder.pos(cx+nearX, cy-nearY, 0).color(colorR, colorG, colorB, colorA).endVertex();
+            bufferbuilder.pos(cx+farX, cy-farY, 0).color(colorR, colorG, colorB, colorA).endVertex();
+        }
+
+        tessellator.draw();
+        GlStateManager.depthMask(true);
+        GlStateManager.enableTexture();
+    }
+
     @SubscribeEvent
-    public void eve(ItemTooltipEvent event){
+    public void eve(PlayerInteractEvent event){
 
         //event.getToolTip().clear();
         //event.getToolTip().add(new StringTextComponent("replaced tooltip!"));
@@ -135,6 +245,60 @@ public class EventHandler {
         if (itemStack.getItem() instanceof MzBow){
             // TODO
         }
+
+//        public float getFovModifier() {
+//            float f = 1.0F;
+//            if (this.abilities.isFlying) {
+//                f *= 1.1F;
+//            }
+//
+//            IAttributeInstance iattributeinstance = this.getAttribute(SharedMonsterAttributes.MOVEMENT_SPEED);
+//            f = (float)((double)f * ((iattributeinstance.getValue() / (double)this.abilities.getWalkSpeed() + 1.0D) / 2.0D));
+//            if (this.abilities.getWalkSpeed() == 0.0F || Float.isNaN(f) || Float.isInfinite(f)) {
+//                f = 1.0F;
+//            }
+//
+//            if (this.isHandActive() && this.getActiveItemStack().getItem() instanceof BowItem) {
+//                int i = this.getItemInUseMaxCount();
+//                float f1 = (float)i / 20.0F;
+//                if (f1 > 1.0F) {
+//                    f1 = 1.0F;
+//                } else {
+//                    f1 *= f1;
+//                }
+//
+//                f *= 1.0F - f1 * 0.15F;
+//            }
+//
+//            return ForgeHooksClient.getOffsetFOV(this, f);
+//        }
+    }
+
+    @SubscribeEvent
+    public void onLivingAttack(LivingAttackEvent event){
+//        LivingEntity entity = event.getEntityLiving();
+//        entity.stopActiveHand();  // 这条代码使盾放下
+//        if (entity.isActiveItemStackBlocking()){    // 不能判断有没有防住
+//            System.out.println("BLOCK!!!");
+//        }
+//        else{
+//            System.out.println("FREE!!!");
+//        }
+
+
+//        public void disableShield(boolean p_190777_1_) { //<- PlayerEntity::disableShield
+//            float f = 0.25F + (float)EnchantmentHelper.getEfficiencyModifier(this) * 0.05F;
+//            if (p_190777_1_) {
+//                f += 0.75F;
+//            }
+//
+//            if (this.rand.nextFloat() < f) {
+//                this.getCooldownTracker().setCooldown(this.getActiveItemStack().getItem(), 100);
+//                this.resetActiveHand();
+//                this.world.setEntityState(this, (byte)30);
+//            }
+//
+//        }
     }
 
 //

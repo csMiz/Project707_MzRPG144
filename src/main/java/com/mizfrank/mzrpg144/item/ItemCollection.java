@@ -2,7 +2,10 @@ package com.mizfrank.mzrpg144.item;
 
 import com.mizfrank.mzrpg144.MzRPG;
 import com.mizfrank.mzrpg144.block.BlockCollection;
+import com.mizfrank.mzrpg144.item.MzItemWeapon.MzArrow.MzArrow;
+import com.mizfrank.mzrpg144.item.MzItemWeapon.MzArrow.MzArrowAP;
 import com.mizfrank.mzrpg144.item.MzItemWeapon.MzBow.MzBowWood;
+import com.mizfrank.mzrpg144.item.MzItemWeapon.MzCrossbow.MzCrossbowWood;
 import com.mizfrank.mzrpg144.item.MzItemWeapon.MzSword.MzSwordIron;
 import net.minecraft.item.BlockItem;
 import net.minecraft.item.Item;
@@ -32,6 +35,15 @@ public class ItemCollection {
             new MzSwordIron.Properties().group(MzRPG.MZ_ITEMGROUP)));
 
     public static final RegistryObject<Item> MZ_BOW_WOOD = ITEMS.register("mz_bow_wood", () -> new MzBowWood(
-            new MzSwordIron.Properties()));
+            new MzBowWood.Properties()));
+
+
+    public static final RegistryObject<Item> MZ_CRSBOW_WOOD = ITEMS.register("mz_crsbow_wood", () -> new MzCrossbowWood(
+            new MzCrossbowWood.Properties()));
+
+
+    public static final RegistryObject<Item> MZ_ARROW_AP = ITEMS.register("mz_arrow_ap", () -> new MzArrowAP(
+            new MzArrowAP.Properties()) {
+    });
 
 }
