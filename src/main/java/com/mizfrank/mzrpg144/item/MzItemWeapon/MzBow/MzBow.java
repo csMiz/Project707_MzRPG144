@@ -5,7 +5,6 @@ import com.mizfrank.mzrpg144.item.ItemCollection;
 import com.mizfrank.mzrpg144.item.MzItemWeapon.MzArrow.MzArrow;
 import com.mizfrank.mzrpg144.item.MzItemWeapon.MzArrow.MzArrowAP;
 import com.mizfrank.mzrpg144.item.MzItemWeapon.MzArrow.MzArrowEntityEx;
-import net.minecraft.client.entity.player.AbstractClientPlayerEntity;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.LivingEntity;
 import net.minecraft.entity.player.PlayerEntity;
@@ -21,33 +20,18 @@ import java.util.function.Predicate;
 
 public abstract class MzBow extends ShootableItem {
 
-    protected float fullPullTick;
-
-    protected float velocityFactor;
-
-    protected float basicInaccFactor;
-
-    protected float dynamicInaccFactor;
-
     public float finalInaccFactor = 1.0f;
-
-    protected float accRecoverFactor;
 
     public float pullProgress = 0.0f;
 
-    public MzBow(Properties properties, float inFullPullTick, float inVelocity, float inInaccuracy, float inInaccDynamic,
-                 float inAccRecover) {
+    public MzBow(Properties properties) {
         super(properties.group(MzRPG.MZ_ITEMGROUP));
-        fullPullTick = inFullPullTick;
-        velocityFactor = inVelocity;
-        basicInaccFactor = inInaccuracy;
-        dynamicInaccFactor = inInaccDynamic;
-        accRecoverFactor = inAccRecover;
         this.addPropertyOverride(new ResourceLocation("pull"), (itemStack, world, livingEntity) -> {
             if (livingEntity == null) {
                 return 0.0F;
             } else {
                 int pullTick = itemStack.getUseDuration() - livingEntity.getItemInUseCount();
+                float fullPullTick = MzBow.getFullPullTick(itemStack);
                 if (livingEntity.getActiveItemStack().getItem() instanceof MzBow){
                     pullProgress = (float)(pullTick) / fullPullTick;
                     if (pullProgress > 1.0f){ pullProgress = 1.0f; }
@@ -61,6 +45,43 @@ public abstract class MzBow extends ShootableItem {
         this.addPropertyOverride(new ResourceLocation("pulling"), (itemStack, world, livingEntity) -> {
             return livingEntity != null && livingEntity.isHandActive() && livingEntity.getActiveItemStack() == itemStack ? 1.0F : 0.0F;
         });
+    }
+
+    public static float[] getMzBowInfo(ItemStack itemStack){
+        float[] result = new float[5];
+        CompoundNBT nbt = itemStack.getTag();
+        if (nbt == null){
+            result[0] = 20.0f;
+            result[1] = 1.0f;
+            result[2] = 1.0f;
+            result[3] = 30.0f;
+            result[4] = 0.4f;
+        }
+        else{
+            result[0] = nbt.getFloat("mz_bow_fptick");
+            result[1] = nbt.getFloat("mz_bow_vel");
+            result[2] = nbt.getFloat("mz_bow_inacc");
+            result[3] = nbt.getFloat("mz_bow_dyn");
+            result[4] = nbt.getFloat("mz_bow_recv");
+        }
+        return result;
+    }
+
+    public static float getFullPullTick(ItemStack itemStack){
+        CompoundNBT nbt = itemStack.getTag();
+        if (nbt == null){
+            return 20.0f;
+        }
+        return nbt.getFloat("mz_bow_fptick");
+    }
+
+    public static void setMzBowInfo(ItemStack itemStack, float[] info){
+        CompoundNBT nbt = itemStack.getOrCreateTag();
+        nbt.putFloat("mz_bow_fptick", info[0]);
+        nbt.putFloat("mz_bow_vel", info[1]);
+        nbt.putFloat("mz_bow_inacc", info[2]);
+        nbt.putFloat("mz_bow_dyn", info[3]);
+        nbt.putFloat("mz_bow_recv", info[4]);
     }
 
     @Override
@@ -80,14 +101,25 @@ public abstract class MzBow extends ShootableItem {
                     ammo = new ItemStack(Items.ARROW);
                 }
 
-                float arrowVelocity = getArrowVelocityProgress(tmpPullTick);
+                float[] bowInfo = MzBow.getMzBowInfo(itemStack);
+                float velocityFactor = bowInfo[1];
+                float basicInaccFactor = bowInfo[2];
+                float dynamicInaccFactor = bowInfo[3];
+                float arrowVelocity = getArrowVelocityProgress(tmpPullTick, bowInfo[0]);
                 if ((double)arrowVelocity >= 0.1D) {
                     if (!world.isRemote) {    // is server only
-                        MzArrowAP ammoItem = (MzArrowAP) (ammo.getItem());
+                        MzArrow ammoItem = (MzArrow) (ammo.getItem());
                         MzArrowEntityEx arrowEntity = ammoItem.createArrowEx(world, ammo, player);
+                        int[] ammoInfo = ammoItem.getBasicInfo(ammo);
+                        float ammoVelFac = 1.0f;
+                        if (ammoInfo[0] == 3) { ammoVelFac = 0.5f; }
+                        else if (ammoInfo[0] == 2) { ammoVelFac = 1.25f; }
 
+                        float finalVel = arrowVelocity * 3.0F * velocityFactor * ammoVelFac;
                         arrowEntity.shoot(player, player.rotationPitch, player.rotationYaw, 0.0F,
-                                arrowVelocity * 3.0F * velocityFactor, finalInaccFactor * 1.0f);
+                                finalVel, finalInaccFactor);
+
+
 //                        if (arrowVelocity == 1.0F) {
 //                            arrowEntity.setIsCritical(true);
 //                        }
@@ -139,7 +171,7 @@ public abstract class MzBow extends ShootableItem {
     }
 
     // 按照Vanilla的公式，f(t) = 0.33 * (t^2 + 2*t)
-    protected float getArrowVelocityProgress(int tmpPullTick) {
+    protected float getArrowVelocityProgress(int tmpPullTick, float fullPullTick) {
         float t = (float)tmpPullTick / fullPullTick;
         t = (t * t + t * 2.0F) / 3.0F;
         if (t > 1.0F) {
@@ -175,12 +207,33 @@ public abstract class MzBow extends ShootableItem {
     }
 
     public Predicate<ItemStack> getInventoryAmmoPredicate() {
-        return ARROWS;
+        return MzArrow.MZ_ARROW_PREDICATE;
     }
 
     protected ItemStack playerFindAmmo(PlayerEntity player, ItemStack held){
-        return new ItemStack(ItemCollection.MZ_ARROW_AP.get());
+        // return new ItemStack(ItemCollection.MZ_ARROW_AP.get());
+        // player.findAmmo()
+        // see -> BowItem
+        if (!(held.getItem() instanceof ShootableItem)) {
+            return ItemStack.EMPTY;
+        } else {
+            Predicate<ItemStack> predicate = ((ShootableItem)held.getItem()).getAmmoPredicate();
+            ItemStack itemstack = ShootableItem.getHeldAmmo(player, predicate);
+            if (!itemstack.isEmpty()) {
+                return itemstack;
+            } else {
+                predicate = ((ShootableItem)held.getItem()).getInventoryAmmoPredicate();
 
+                for(int i = 0; i < player.inventory.getSizeInventory(); ++i) {
+                    ItemStack itemstack1 = player.inventory.getStackInSlot(i);
+                    if (predicate.test(itemstack1)) {
+                        return itemstack1;
+                    }
+                }
+
+                return player.abilities.isCreativeMode ? new ItemStack(ItemCollection.MZ_ARROW_AP.get()) : ItemStack.EMPTY;
+            }
+        }
     }
 
     @Override
@@ -188,6 +241,11 @@ public abstract class MzBow extends ShootableItem {
         super.inventoryTick(itemStack, world, entity, slot, inHand);
         if (world.isRemote){ // is client only
             if (entity instanceof PlayerEntity){  // is player
+                float[] bowInfo = MzBow.getMzBowInfo(itemStack);
+                float basicInaccFactor = bowInfo[2];
+                float dynamicInaccFactor = bowInfo[3];
+                float accRecoverFactor = bowInfo[4];
+
                 if (((PlayerEntity)entity).getHeldItemMainhand().equals(itemStack)){  // holding
                     finalInaccFactor -= accRecoverFactor;
                     if (finalInaccFactor < basicInaccFactor){

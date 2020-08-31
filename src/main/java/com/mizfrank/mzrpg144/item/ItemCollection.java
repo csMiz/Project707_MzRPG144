@@ -4,8 +4,11 @@ import com.mizfrank.mzrpg144.MzRPG;
 import com.mizfrank.mzrpg144.block.BlockCollection;
 import com.mizfrank.mzrpg144.item.MzItemWeapon.MzArrow.MzArrow;
 import com.mizfrank.mzrpg144.item.MzItemWeapon.MzArrow.MzArrowAP;
+import com.mizfrank.mzrpg144.item.MzItemWeapon.MzArrow.MzArrowAPCR;
+import com.mizfrank.mzrpg144.item.MzItemWeapon.MzArrow.MzArrowHE;
 import com.mizfrank.mzrpg144.item.MzItemWeapon.MzBow.MzBowWood;
 import com.mizfrank.mzrpg144.item.MzItemWeapon.MzCrossbow.MzCrossbowWood;
+import com.mizfrank.mzrpg144.item.MzItemWeapon.MzGrenade.MzGrenade;
 import com.mizfrank.mzrpg144.item.MzItemWeapon.MzSword.MzSwordIron;
 import net.minecraft.item.BlockItem;
 import net.minecraft.item.Item;
@@ -46,4 +49,15 @@ public class ItemCollection {
             new MzArrowAP.Properties()) {
     });
 
+    public static final RegistryObject<Item> MZ_ARROW_APCR = ITEMS.register("mz_arrow_apcr", () -> new MzArrowAPCR(
+            new MzArrowAPCR.Properties()) {
+    });
+
+    public static final RegistryObject<Item> MZ_ARROW_HE = ITEMS.register("mz_arrow_he", () -> new MzArrowHE(
+            new MzArrowHE.Properties()) {
+    });
+
+    public static final RegistryObject<Item> MZ_GRENADE_AP = ITEMS.register("mz_grenade_ap", () -> new MzGrenade(
+            new MzGrenade.Properties()) {
+    });
 }

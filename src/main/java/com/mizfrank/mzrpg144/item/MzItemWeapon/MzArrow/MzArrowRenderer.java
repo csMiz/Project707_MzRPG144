@@ -8,7 +8,7 @@ import net.minecraft.util.ResourceLocation;
 
 import javax.annotation.Nullable;
 
-public class MzArrowRenderer extends ArrowRenderer<MzArrowEntity> {
+public class MzArrowRenderer extends MzBaseArrowRenderer<MzArrowEntityEx> {
 
     public MzArrowRenderer(EntityRendererManager p_i46193_1_) {
         super(p_i46193_1_);
@@ -16,7 +16,7 @@ public class MzArrowRenderer extends ArrowRenderer<MzArrowEntity> {
 
     @Nullable
     @Override
-    protected ResourceLocation getEntityTexture(MzArrowEntity mzArrowEntity) {
+    protected ResourceLocation getEntityTexture(MzArrowEntityEx mzArrowEntity) {
         Item refItem = mzArrowEntity.getArrowStack().getItem();
         return new ResourceLocation(MzRPG.MOD_ID, "textures/entity/projectile/mz_arrow.png");
     }

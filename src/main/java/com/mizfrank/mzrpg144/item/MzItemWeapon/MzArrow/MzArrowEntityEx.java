@@ -8,13 +8,17 @@ import net.minecraft.block.BlockState;
 import net.minecraft.enchantment.EnchantmentHelper;
 import net.minecraft.enchantment.Enchantments;
 import net.minecraft.entity.*;
+import net.minecraft.entity.item.ExperienceOrbEntity;
+import net.minecraft.entity.item.ItemEntity;
 import net.minecraft.entity.monster.EndermanEntity;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.entity.player.ServerPlayerEntity;
 import net.minecraft.entity.projectile.AbstractArrowEntity;
+import net.minecraft.entity.projectile.FireballEntity;
 import net.minecraft.entity.projectile.ProjectileHelper;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
+import net.minecraft.item.Items;
 import net.minecraft.nbt.CompoundNBT;
 import net.minecraft.nbt.NBTUtil;
 import net.minecraft.network.IPacket;
@@ -22,13 +26,17 @@ import net.minecraft.network.datasync.DataParameter;
 import net.minecraft.network.datasync.DataSerializers;
 import net.minecraft.network.datasync.EntityDataManager;
 import net.minecraft.network.play.server.SChangeGameStatePacket;
+import net.minecraft.network.play.server.SCollectItemPacket;
 import net.minecraft.particles.ParticleTypes;
+import net.minecraft.potion.PotionUtils;
+import net.minecraft.potion.Potions;
 import net.minecraft.util.DamageSource;
 import net.minecraft.util.SoundEvent;
 import net.minecraft.util.SoundEvents;
 import net.minecraft.util.math.*;
 import net.minecraft.util.math.shapes.VoxelShape;
 import net.minecraft.util.registry.Registry;
+import net.minecraft.world.Explosion;
 import net.minecraft.world.World;
 import net.minecraft.world.server.ServerWorld;
 import net.minecraftforge.api.distmarker.Dist;
@@ -65,6 +73,7 @@ public class MzArrowEntityEx extends Entity implements IProjectile {
 
     protected static final DataParameter<Optional<UUID>> senderID = EntityDataManager.createKey
             (MzArrowEntityEx.class, DataSerializers.OPTIONAL_UNIQUE_ID);
+    protected static final DataParameter<Byte> dm_arwtype = EntityDataManager.createKey(MzArrowEntityEx.class, DataSerializers.BYTE);
     protected static final DataParameter<Float> dm_calib = EntityDataManager.createKey(MzArrowEntityEx.class, DataSerializers.FLOAT);
     protected static final DataParameter<Float> dm_wgtfac = EntityDataManager.createKey(MzArrowEntityEx.class, DataSerializers.FLOAT);
     protected static final DataParameter<Float> dm_dmgfac = EntityDataManager.createKey(MzArrowEntityEx.class, DataSerializers.FLOAT);
@@ -103,8 +112,39 @@ public class MzArrowEntityEx extends Entity implements IProjectile {
         //this.referenceItem = referenceItemIn;
     }
 
+    /**
+     * 从实体状态ArrowEntity转换为物品状态ItemStack
+     * 用于从地上捡起箭
+     * */
     protected ItemStack getArrowStack() {
-        return new ItemStack(ItemCollection.MZ_ARROW_AP.get());
+        ItemStack result = null;
+        byte tmpArwtype = dataManager.get(dm_arwtype);
+        if (tmpArwtype > 0){
+            int[] info = new int[]{
+                    tmpArwtype,
+                    (int)(dataManager.get(dm_calib) * 1000),
+                    (int)(dataManager.get(dm_wgtfac) * 1000),
+                    (int)(dataManager.get(dm_dmgfac) * 1000),
+                    (int)(dataManager.get(dm_penfac) * 1000)
+            };
+            if (tmpArwtype == 1){
+                result = MzArrowAP.parseAmmo(info);
+            }
+            else if (tmpArwtype == 2){
+                result = MzArrowAPCR.parseAmmo(info);
+            }
+            else if (tmpArwtype == 3){
+                result = MzArrowHE.parseAmmo(info);
+            }
+            else{
+                result = MzArrowAP.parseAmmo(info);
+            }
+        }
+        else{
+            result = new ItemStack(ItemCollection.MZ_ARROW_AP.get());
+        }
+
+        return result;
     }
 
     public void setMzArrowEntityProperties(float calibIn, float wgtIn, float dmgIn, float penIn){
@@ -115,6 +155,7 @@ public class MzArrowEntityEx extends Entity implements IProjectile {
     }
 
     public void setMzArrowEntityProperties(int[] info){
+        dataManager.set(dm_arwtype, (byte)info[0]);
         dataManager.set(dm_calib, info[1] / 1000.0f);
         dataManager.set(dm_wgtfac, info[2] / 1000.0f);
         dataManager.set(dm_dmgfac, info[3] / 1000.0f);
@@ -158,6 +199,14 @@ public class MzArrowEntityEx extends Entity implements IProjectile {
         return tmpDamage;
     }
 
+    protected void HEArrowExplode(Vec3d pos){
+        float explodeLevel = 1.0F;
+        boolean canCauseFire = false;
+
+        world.createExplosion(this, MzDamageSourceCollection.causeMzHEDamage(this, getShooter()),
+                pos.x, pos.y, pos.z, explodeLevel, canCauseFire, Explosion.Mode.NONE);  // TODO:可以尝试手动自定义爆炸伤害和范围?
+    }
+
 
     @OnlyIn(Dist.CLIENT)
     public boolean isInRangeToRenderDist(double p_70112_1_) {
@@ -173,6 +222,7 @@ public class MzArrowEntityEx extends Entity implements IProjectile {
     // 初始化data manager
     protected void registerData() {
         dataManager.register(senderID, Optional.empty());
+        dataManager.register(dm_arwtype, (byte)0);
         dataManager.register(dm_calib, 1.0f);
         dataManager.register(dm_wgtfac, 1.0f);
         dataManager.register(dm_dmgfac, 1.0f);
@@ -275,6 +325,11 @@ public class MzArrowEntityEx extends Entity implements IProjectile {
         } else {
             this.timeInGround = 0;
             ++this.ticksInAir;
+            if (!this.world.isRemote) {
+                if (this.ticksInAir > 120){
+                    this.remove();
+                }
+            }
             Vec3d vec3d1 = new Vec3d(this.posX, this.posY, this.posZ);
             Vec3d vec3d2 = vec3d1.add(vec3d);
             RayTraceResult raytraceresult = this.world.rayTraceBlocks(new RayTraceContext(vec3d1, vec3d2, RayTraceContext.BlockMode.COLLIDER, RayTraceContext.FluidMode.NONE, this));
@@ -347,21 +402,39 @@ public class MzArrowEntityEx extends Entity implements IProjectile {
 
             this.rotationPitch = MathHelper.lerp(0.2F, this.prevRotationPitch, this.rotationPitch);
             this.rotationYaw = MathHelper.lerp(0.2F, this.prevRotationYaw, this.rotationYaw);
-            float f1 = 0.99F;
-            float f2 = 0.05F;
+            // 空气阻力
+            float airResist = 0.99F;
             if (this.isInWater()) {
                 for(int j = 0; j < 4; ++j) {
-                    float f3 = 0.25F;
                     this.world.addParticle(ParticleTypes.BUBBLE, this.posX - d1 * 0.25D, this.posY - d2 * 0.25D, this.posZ - d0 * 0.25D, d1, d2, d0);
                 }
 
-                f1 = this.getWaterDrag();
+                airResist = this.getWaterDrag();
             }
 
-            this.setMotion(vec3d.scale((double)f1));
-            if (!this.hasNoGravity() && !flag) {
+            byte tmpArwtype = dataManager.get(dm_arwtype);
+            if (tmpArwtype == 2){    // APCR减速更快
+                airResist = 0.9801f;
+            }
+            else if (tmpArwtype == 3){
+                airResist = 0.9949f;
+            }
+
+            this.setMotion(vec3d.scale((double)airResist));
+            if (!this.hasNoGravity() && !flag) {    // 下坠
                 Vec3d vec3d3 = this.getMotion();
-                this.setMotion(vec3d3.x, vec3d3.y - 0.05000000074505806D, vec3d3.z);
+                double tmpY;
+
+                if (tmpArwtype == 4){    // rocket launcher
+                    tmpY = vec3d3.y;
+                }
+                else if (tmpArwtype == 3){    // HE
+                    tmpY = vec3d3.y - 0.02500000074505806D;
+                }
+                else {    // AP, APCR
+                    tmpY = vec3d3.y - 0.05000000074505806D;
+                }
+                this.setMotion(vec3d3.x, tmpY, vec3d3.z);
             }
 
             this.setPosition(this.posX, this.posY, this.posZ);
@@ -378,12 +451,21 @@ public class MzArrowEntityEx extends Entity implements IProjectile {
 
     }
 
-    protected void onHit(RayTraceResult p_184549_1_) {
-        RayTraceResult.Type raytraceresult$type = p_184549_1_.getType();
+    protected void onHit(RayTraceResult rtResult) {
+        RayTraceResult.Type raytraceresult$type = rtResult.getType();
         if (raytraceresult$type == RayTraceResult.Type.ENTITY) {
-            this.func_213868_a((EntityRayTraceResult)p_184549_1_);
+
+            // TODO: 判断是否击穿
+            if (dataManager.get(dm_arwtype) == 3){    // HE
+                HEArrowExplode(rtResult.getHitVec());
+                this.remove();
+            }
+            else{
+                this.func_213868_a((EntityRayTraceResult)rtResult);
+            }
+
         } else if (raytraceresult$type == RayTraceResult.Type.BLOCK) {
-            BlockRayTraceResult blockraytraceresult = (BlockRayTraceResult)p_184549_1_;
+            BlockRayTraceResult blockraytraceresult = (BlockRayTraceResult)rtResult;
             BlockState blockstate = this.world.getBlockState(blockraytraceresult.getPos());
             this.inBlockState = blockstate;
             Vec3d vec3d = blockraytraceresult.getHitVec().subtract(this.posX, this.posY, this.posZ);
@@ -397,6 +479,11 @@ public class MzArrowEntityEx extends Entity implements IProjectile {
             this.arrowShake = 7;
             this.func_213870_w();
             blockstate.onProjectileCollision(this.world, blockstate, blockraytraceresult, this);
+
+            if (dataManager.get(dm_arwtype) == 3){    // HE
+                HEArrowExplode(rtResult.getHitVec());
+                this.remove();
+            }
         }
 
     }
@@ -538,6 +625,7 @@ public class MzArrowEntityEx extends Entity implements IProjectile {
 
         nbt.putString("SoundEvent", Registry.SOUND_EVENT.getKey(this.soundEvent).toString());
 
+        nbt.putByte("mz_arwtype", dataManager.get(dm_arwtype));
         nbt.putFloat("mz_calib", dataManager.get(dm_calib));
         nbt.putFloat("mz_wgtfac", dataManager.get(dm_wgtfac));
         nbt.putFloat("mz_dmgfac", dataManager.get(dm_dmgfac));
@@ -563,6 +651,7 @@ public class MzArrowEntityEx extends Entity implements IProjectile {
             this.shootingEntity = nbt.getUniqueId("OwnerUUID");
         }
 
+        dataManager.set(dm_arwtype, nbt.getByte("mz_arwtype"));
         dataManager.set(dm_calib, nbt.getFloat("mz_calib"));
         dataManager.set(dm_wgtfac, nbt.getFloat("mz_wgtfac"));
         dataManager.set(dm_dmgfac, nbt.getFloat("mz_dmgfac"));
@@ -582,15 +671,18 @@ public class MzArrowEntityEx extends Entity implements IProjectile {
         return this.shootingEntity != null && this.world instanceof ServerWorld ? ((ServerWorld)this.world).getEntityByUuid(this.shootingEntity) : null;
     }
 
-    public void onCollideWithPlayer(PlayerEntity p_70100_1_) {
+    public void onCollideWithPlayer(PlayerEntity playerEntity) {
+        // 捡起地上的箭
         if (!this.world.isRemote && (this.inGround || this.isNoClip()) && this.arrowShake <= 0) {
-            boolean flag = this.pickupStatus == net.minecraft.entity.projectile.AbstractArrowEntity.PickupStatus.ALLOWED || this.pickupStatus == net.minecraft.entity.projectile.AbstractArrowEntity.PickupStatus.CREATIVE_ONLY && p_70100_1_.abilities.isCreativeMode || this.isNoClip() && this.getShooter().getUniqueID() == p_70100_1_.getUniqueID();
-            if (this.pickupStatus == net.minecraft.entity.projectile.AbstractArrowEntity.PickupStatus.ALLOWED && !p_70100_1_.inventory.addItemStackToInventory(this.getArrowStack())) {
+            boolean flag = this.pickupStatus == net.minecraft.entity.projectile.AbstractArrowEntity.PickupStatus.ALLOWED || this.pickupStatus == net.minecraft.entity.projectile.AbstractArrowEntity.PickupStatus.CREATIVE_ONLY && playerEntity.abilities.isCreativeMode || this.isNoClip() && this.getShooter().getUniqueID() == playerEntity.getUniqueID();
+            if (this.pickupStatus == net.minecraft.entity.projectile.AbstractArrowEntity.PickupStatus.ALLOWED && !playerEntity.inventory.addItemStackToInventory(this.getArrowStack())) {
                 flag = false;
             }
 
             if (flag) {
-                p_70100_1_.onItemPickup(this, 1);
+                if (!this.removed && !world.isRemote) {
+                    ((ServerWorld)world).getChunkProvider().sendToAllTracking(this, new SCollectItemPacket(this.getEntityId(), playerEntity.getEntityId(), 1));
+                }
                 this.remove();
             }
         }
@@ -633,7 +725,7 @@ public class MzArrowEntityEx extends Entity implements IProjectile {
     }
 
 
-    public boolean isNoClip() {    // FIXME: 这里写错了，收回动画丢失？
+    public boolean isNoClip() {
         if (!this.world.isRemote) {
             return this.noClip;
         }

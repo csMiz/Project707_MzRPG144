@@ -6,10 +6,8 @@ import com.mizfrank.mzrpg144.block.MzMedalBoxScreen;
 import com.mizfrank.mzrpg144.entity.*;
 import com.mizfrank.mzrpg144.item.ItemCollection;
 import com.mizfrank.mzrpg144.item.ItemRendererCollection;
-import com.mizfrank.mzrpg144.item.MzItemWeapon.MzArrow.MzArrowEntity;
 import com.mizfrank.mzrpg144.item.MzItemWeapon.MzArrow.MzArrowEntityEx;
 import com.mizfrank.mzrpg144.item.MzItemWeapon.MzArrow.MzArrowRenderer;
-import com.mizfrank.mzrpg144.item.MzItemWeapon.MzArrow.MzArrowRendererEx;
 import net.minecraft.block.Block;
 import net.minecraft.block.Blocks;
 import net.minecraft.client.gui.ScreenManager;
@@ -18,7 +16,6 @@ import net.minecraft.item.ItemStack;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.common.capabilities.CapabilityManager;
 import net.minecraftforge.event.RegistryEvent;
-import net.minecraftforge.event.entity.player.PlayerEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.client.registry.RenderingRegistry;
 import net.minecraftforge.fml.common.Mod;
@@ -98,9 +95,9 @@ public class MzRPG {
         ScreenManager.registerFactory(ContainerCollection.MZ_MEDAL_BOX_CONTAINER.get(), MzMedalBoxScreen::new);
 
 
-        RenderingRegistry.registerEntityRenderingHandler(MzArrowEntity.class, MzArrowRenderer::new);
-        RenderingRegistry.registerEntityRenderingHandler(MzArrowEntityEx.class, MzArrowRendererEx::new);
+        RenderingRegistry.registerEntityRenderingHandler(MzArrowEntityEx.class, MzArrowRenderer::new);
 
+        Keybinds.register();
     }
 
     // You can use SubscribeEvent and let the Event Bus discover methods to call

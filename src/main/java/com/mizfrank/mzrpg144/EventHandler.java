@@ -4,8 +4,11 @@ import com.mizfrank.mzrpg144.entity.IMzSpecialty;
 import com.mizfrank.mzrpg144.entity.MzSpecialty;
 import com.mizfrank.mzrpg144.entity.MzSpecialtyProvider;
 import com.mizfrank.mzrpg144.item.ItemCollection;
+import com.mizfrank.mzrpg144.item.MzItemWeapon.MzArrow.MzArrowHE;
 import com.mizfrank.mzrpg144.item.MzItemWeapon.MzBow.MzBow;
+import com.mizfrank.mzrpg144.item.MzItemWeapon.MzCrossbow.MzCrossbow;
 import com.mizfrank.mzrpg144.item.MzItemWeapon.MzSword.MzSword;
+import com.mizfrank.mzrpg144.util.MzDamageSourceCollection;
 import com.mojang.blaze3d.platform.GLX;
 import com.mojang.blaze3d.platform.GlStateManager;
 import net.minecraft.client.MainWindow;
@@ -15,6 +18,7 @@ import net.minecraft.client.renderer.ActiveRenderInfo;
 import net.minecraft.client.renderer.BufferBuilder;
 import net.minecraft.client.renderer.Tessellator;
 import net.minecraft.client.renderer.vertex.DefaultVertexFormats;
+import net.minecraft.client.world.ClientWorld;
 import net.minecraft.enchantment.EnchantmentHelper;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.LivingEntity;
@@ -31,11 +35,19 @@ import net.minecraft.util.DamageSource;
 import net.minecraft.util.Hand;
 import net.minecraft.util.SoundEvents;
 import net.minecraft.util.text.StringTextComponent;
+import net.minecraft.world.Explosion;
 import net.minecraft.world.server.ServerWorld;
 import net.minecraftforge.client.ForgeHooksClient;
 import net.minecraftforge.client.event.FOVUpdateEvent;
+import net.minecraftforge.client.event.GuiScreenEvent;
+import net.minecraftforge.client.event.InputEvent;
 import net.minecraftforge.client.event.RenderGameOverlayEvent;
 import net.minecraftforge.common.MinecraftForge;
+import net.minecraftforge.event.TickEvent;
+import net.minecraftforge.event.entity.EntityMobGriefingEvent;
+import net.minecraftforge.event.entity.item.ItemEvent;
+import net.minecraftforge.event.entity.item.ItemExpireEvent;
+import net.minecraftforge.event.entity.item.ItemTossEvent;
 import net.minecraftforge.event.entity.living.LivingAttackEvent;
 import net.minecraftforge.event.entity.living.LivingEntityUseItemEvent;
 import net.minecraftforge.event.entity.player.*;
@@ -174,6 +186,20 @@ public class EventHandler {
 
         //event.getToolTip().clear();
         //event.getToolTip().add(new StringTextComponent("replaced tooltip!"));
+    }
+
+    @SubscribeEvent
+    public void onKeyInput(InputEvent.KeyInputEvent event)
+    {
+        if (Keybinds.KEY_RELOAD.isPressed())
+        {
+            System.out.println("Key RELOAD pressed");
+            ItemStack heldItem = Minecraft.getInstance().player.getHeldItemMainhand();
+            if (heldItem.getItem() instanceof MzCrossbow){
+                MzCrossbow crsbow = (MzCrossbow) heldItem.getItem();
+                crsbow.startAutoLoading();
+            }
+        }
     }
 
     @SubscribeEvent

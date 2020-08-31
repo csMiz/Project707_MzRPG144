@@ -12,12 +12,34 @@ import net.minecraft.item.ArrowItem;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.CompoundNBT;
+import net.minecraft.tags.ItemTags;
 import net.minecraft.world.World;
+import org.apache.commons.lang3.ObjectUtils;
 
 import java.util.List;
+import java.util.function.Predicate;
 
 public abstract class MzArrow extends Item {
 
+
+    public static Predicate<ItemStack> MZ_ARROW_PREDICATE = (itemStack) -> {
+        return itemStack.getItem() instanceof MzArrow;
+    };
+
+    public static boolean isHE(ItemStack itemStack){
+        Item tmpItem = itemStack.getItem();
+        if (tmpItem instanceof MzArrow){
+            CompoundNBT nbt = itemStack.getTag();
+            if (nbt == null){
+                return (tmpItem instanceof MzArrowHE);
+            }
+            else{
+                byte arwType = nbt.getByte("mz_arwtype");
+                return (arwType == 3 || arwType == 4);
+            }
+        }
+        return false;
+    }
     /**
      * 0 - Vanilla计算方式，计算护甲，不穿透盾牌
      * 1 - APCR，根据穿透力判断是否穿透盾牌
@@ -28,28 +50,9 @@ public abstract class MzArrow extends Item {
         super(prop.group(MzRPG.MZ_ITEMGROUP));
     }
 
-//    public static List<Integer> getBasicInfo(ItemStack itemStack){
-//        CompoundNBT nbt = itemStack.getTag();
-//        if (nbt == null){ return new float[]{1.0f, 1.0f, 9.0f, 3.0f}; }
-//        return new float[]{ nbt.getFloat("mz_calib"), nbt.getFloat("mz_wgtfac"),
-//                nbt.getFloat("mz_dmgfac"), nbt.getFloat("mz_penfac") };
-//    }
+    public abstract int[] getBasicInfo(ItemStack itemStack);
 
-    public AbstractArrowEntity createArrow(World worldIn, ItemStack itemStack, LivingEntity livingEntity) {
-//        MzArrowEntity entity = new MzArrowEntity(worldIn, livingEntity);
-//        float[] info = getBasicInfo(itemStack);
-//        entity.setMzArrowEntityProperties(info);
-//        return entity;
-        return null;
-    }
-
-    public MzArrowEntityEx createArrowEx(World worldIn, ItemStack itemStack, LivingEntity livingEntity) {
-//        MzArrowEntityEx entity = new MzArrowEntityEx(worldIn, livingEntity);
-//        float[] info = getBasicInfo(itemStack);
-//        entity.setMzArrowEntityProperties(info);
-//        return entity;
-        return null;
-    }
+    public abstract MzArrowEntityEx createArrowEx(World worldIn, ItemStack itemStack, LivingEntity livingEntity);
 
     public boolean isInfinite(ItemStack p_isInfinite_1_, ItemStack launcher, PlayerEntity player) {
         return false;

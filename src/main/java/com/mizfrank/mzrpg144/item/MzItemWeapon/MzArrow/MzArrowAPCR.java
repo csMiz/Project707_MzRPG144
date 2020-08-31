@@ -1,24 +1,22 @@
 package com.mizfrank.mzrpg144.item.MzItemWeapon.MzArrow;
 
 import com.mizfrank.mzrpg144.item.ItemCollection;
-import net.minecraft.block.BedBlock;
 import net.minecraft.entity.LivingEntity;
-import net.minecraft.item.BedItem;
+import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.CompoundNBT;
 import net.minecraft.world.World;
 
-public class MzArrowAP extends MzArrow {
+public class MzArrowAPCR extends MzArrow {
 
-
-    public MzArrowAP(Properties prop) {
+    public MzArrowAPCR(Item.Properties prop) {
         super(prop);
     }
 
     @Override
     public int[] getBasicInfo(ItemStack itemStack){
         CompoundNBT nbt = itemStack.getTag();
-        if (nbt == null){ return new int[]{ 1, 1000, 1000, 9000, 3000 }; }
+        if (nbt == null){ return new int[]{ 2, 1000, 1000, 6000, 4500 }; }
         int[] r = new int[5];
         r[0] = nbt.getByte("mz_arwtype");
         r[1] = nbt.getInt("mz_calib");
@@ -38,7 +36,7 @@ public class MzArrowAP extends MzArrow {
     }
 
     public static ItemStack parseAmmo(int[] info){
-        ItemStack r = new ItemStack(ItemCollection.MZ_ARROW_AP.get());
+        ItemStack r = new ItemStack(ItemCollection.MZ_ARROW_APCR.get());
         CompoundNBT nbt = new CompoundNBT();
         nbt.putByte("mz_arwtype", (byte)info[0]);
         nbt.putInt("mz_calib", info[1]);
