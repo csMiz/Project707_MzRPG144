@@ -2,23 +2,18 @@ package com.mizfrank.mzrpg144.item.MzItemWeapon.MzArrow;
 
 import com.mizfrank.mzrpg144.item.ItemCollection;
 import com.mizfrank.mzrpg144.item.ItemRendererCollection;
-import com.mizfrank.mzrpg144.util.MzDamageSourceCollection;
+import com.mizfrank.mzrpg144.MzDamageSourceCollection;
 import it.unimi.dsi.fastutil.ints.IntOpenHashSet;
 import net.minecraft.block.BlockState;
 import net.minecraft.enchantment.EnchantmentHelper;
 import net.minecraft.enchantment.Enchantments;
 import net.minecraft.entity.*;
-import net.minecraft.entity.item.ExperienceOrbEntity;
-import net.minecraft.entity.item.ItemEntity;
 import net.minecraft.entity.monster.EndermanEntity;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.entity.player.ServerPlayerEntity;
-import net.minecraft.entity.projectile.AbstractArrowEntity;
-import net.minecraft.entity.projectile.FireballEntity;
 import net.minecraft.entity.projectile.ProjectileHelper;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
-import net.minecraft.item.Items;
 import net.minecraft.nbt.CompoundNBT;
 import net.minecraft.nbt.NBTUtil;
 import net.minecraft.network.IPacket;
@@ -28,8 +23,6 @@ import net.minecraft.network.datasync.EntityDataManager;
 import net.minecraft.network.play.server.SChangeGameStatePacket;
 import net.minecraft.network.play.server.SCollectItemPacket;
 import net.minecraft.particles.ParticleTypes;
-import net.minecraft.potion.PotionUtils;
-import net.minecraft.potion.Potions;
 import net.minecraft.util.DamageSource;
 import net.minecraft.util.SoundEvent;
 import net.minecraft.util.SoundEvents;
@@ -337,16 +330,19 @@ public class MzArrowEntityEx extends Entity implements IProjectile {
                 vec3d2 = ((RayTraceResult)raytraceresult).getHitVec();
             }
 
-            while(!this.removed) {
+            int remove_loop_check = 0;
+            while(!this.removed && remove_loop_check < 3) {
+                remove_loop_check += 1;    // 这里有无限循环bug
                 EntityRayTraceResult entityraytraceresult = this.func_213866_a(vec3d1, vec3d2);
                 if (entityraytraceresult != null) {
                     raytraceresult = entityraytraceresult;
                 }
 
                 if (raytraceresult != null && ((RayTraceResult)raytraceresult).getType() == RayTraceResult.Type.ENTITY) {
-                    Entity entity = ((EntityRayTraceResult)raytraceresult).getEntity();
-                    Entity entity1 = this.getShooter();
-                    if (entity instanceof PlayerEntity && entity1 instanceof PlayerEntity && !((PlayerEntity)entity1).canAttackPlayer((PlayerEntity)entity)) {
+                    // 禁用队友伤害，跳出
+                    Entity victim = ((EntityRayTraceResult)raytraceresult).getEntity();
+                    Entity shooter = this.getShooter();
+                    if (victim instanceof PlayerEntity && shooter instanceof PlayerEntity && !((PlayerEntity)shooter).canAttackPlayer((PlayerEntity)victim)) {
                         raytraceresult = null;
                         entityraytraceresult = null;
                     }
@@ -520,14 +516,14 @@ public class MzArrowEntityEx extends Entity implements IProjectile {
 //            this.field_213878_az.add(entity.getEntityId());
 //        }
 
-        Entity entity1 = this.getShooter();
+        Entity shooter = this.getShooter();
         DamageSource damagesource;
-        if (entity1 == null) {
+        if (shooter == null) {
             damagesource = MzDamageSourceCollection.causeMzAPCRDamage(this, this);
         } else {
-            damagesource = MzDamageSourceCollection.causeMzAPCRDamage(this, entity1);
-            if (entity1 instanceof LivingEntity) {
-                ((LivingEntity)entity1).setLastAttackedEntity(entity);
+            damagesource = MzDamageSourceCollection.causeMzAPCRDamage(this, shooter);
+            if (shooter instanceof LivingEntity) {
+                ((LivingEntity)shooter).setLastAttackedEntity(entity);
             }
         }
 
@@ -550,14 +546,14 @@ public class MzArrowEntityEx extends Entity implements IProjectile {
                     }
                 }
 
-                if (!this.world.isRemote && entity1 instanceof LivingEntity) {
-                    EnchantmentHelper.applyThornEnchantments(livingentity, entity1);
-                    EnchantmentHelper.applyArthropodEnchantments((LivingEntity)entity1, livingentity);
+                if (!this.world.isRemote && shooter instanceof LivingEntity) {
+                    EnchantmentHelper.applyThornEnchantments(livingentity, shooter);
+                    EnchantmentHelper.applyArthropodEnchantments((LivingEntity)shooter, livingentity);
                 }
 
                 this.arrowHit(livingentity);
-                if (entity1 != null && livingentity != entity1 && livingentity instanceof PlayerEntity && entity1 instanceof ServerPlayerEntity) {
-                    ((ServerPlayerEntity)entity1).connection.sendPacket(new SChangeGameStatePacket(6, 0.0F));
+                if (shooter != null && livingentity != shooter && livingentity instanceof PlayerEntity && shooter instanceof ServerPlayerEntity) {
+                    ((ServerPlayerEntity)shooter).connection.sendPacket(new SChangeGameStatePacket(6, 0.0F));
                 }
 
                 if (!entity.isAlive() && this.field_213875_aA != null) {
@@ -604,8 +600,15 @@ public class MzArrowEntityEx extends Entity implements IProjectile {
 
     @Nullable
     protected EntityRayTraceResult func_213866_a(Vec3d p_213866_1_, Vec3d p_213866_2_) {
-        return ProjectileHelper.func_221271_a(this.world, this, p_213866_1_, p_213866_2_, this.getBoundingBox().expand(this.getMotion()).grow(1.0D), (p_lambda$func_213866_a$0_1_) -> {
-            return !p_lambda$func_213866_a$0_1_.isSpectator() && p_lambda$func_213866_a$0_1_.isAlive() && p_lambda$func_213866_a$0_1_.canBeCollidedWith() && (p_lambda$func_213866_a$0_1_ != this.getShooter() || this.ticksInAir >= 5) && (this.field_213878_az == null || !this.field_213878_az.contains(p_lambda$func_213866_a$0_1_.getEntityId()));
+        return ProjectileHelper.func_221271_a(this.world, this, p_213866_1_, p_213866_2_,
+                this.getBoundingBox().expand(this.getMotion()).grow(1.0D),
+                (entity) -> {
+            return !entity.isSpectator() &&
+                    entity.isAlive() &&
+                    entity.canBeCollidedWith() &&
+                    (entity != this.getShooter() || this.ticksInAir >= 5) &&
+                    (this.field_213878_az == null ||
+                            !this.field_213878_az.contains(entity.getEntityId()));
         });
     }
 

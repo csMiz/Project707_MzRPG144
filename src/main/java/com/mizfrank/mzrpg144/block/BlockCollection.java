@@ -21,5 +21,7 @@ public class BlockCollection {
     public static final RegistryObject<Block> MZ_MEDAL_BOX = BLOCKS.register(
             "mz_medal_box", () -> new MzMedalBox());
 
+    public static final RegistryObject<Block> MZ_MAGIC_TABLE = BLOCKS.register(
+            "mz_magic_table", () -> new MzMagicTable());
 
 }

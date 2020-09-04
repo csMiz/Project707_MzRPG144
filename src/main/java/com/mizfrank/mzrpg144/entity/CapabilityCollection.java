@@ -13,7 +13,7 @@ import net.minecraftforge.fml.common.Mod;
 /**
  * Capability handler
  *
- * This class is responsible for attaching our capabilities
+ * This class is responsible for attaching capabilities
  */
 public class CapabilityCollection {
 

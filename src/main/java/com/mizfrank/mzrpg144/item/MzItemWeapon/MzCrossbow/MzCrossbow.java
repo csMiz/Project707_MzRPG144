@@ -1,5 +1,6 @@
 package com.mizfrank.mzrpg144.item.MzItemWeapon.MzCrossbow;
 
+import com.mizfrank.mzrpg144.MzAutoLoader;
 import com.mizfrank.mzrpg144.MzRPG;
 import com.mizfrank.mzrpg144.item.ItemCollection;
 import com.mizfrank.mzrpg144.item.MzItemWeapon.MzArrow.MzArrow;
@@ -23,7 +24,6 @@ import net.minecraft.util.*;
 import net.minecraft.util.math.Vec3d;
 import net.minecraft.util.text.ITextComponent;
 import net.minecraft.world.World;
-import net.minecraft.world.gen.feature.structure.MineshaftPieces;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 
@@ -32,6 +32,7 @@ import java.util.List;
 import java.util.function.Predicate;
 
 public abstract class MzCrossbow extends ShootableItem {
+
     private boolean progressPass2 = false;
     private boolean progressPass5 = false;
 
@@ -57,15 +58,25 @@ public abstract class MzCrossbow extends ShootableItem {
                 else{
 //                    pullProgress = (float)(itemStack.getUseDuration() - livingEntity.getItemInUseCount()) / fullPullTick;
 //                    if (pullProgress > 1.0f){ pullProgress = 1.0f; }
-                    return pullProgress;
+                    if (itemStack.equals(livingEntity.getHeldItemMainhand())){
+                        return pullProgress;
+                    }
                 }
-            } else {
-                return 0.0F;
             }
+            return 0.0F;
         });
         this.addPropertyOverride(new ResourceLocation("pulling"), (itemStack, worldIn, livingEntity) -> {
-            return livingEntity != null && pullProgress > 0.0f &&
-                    !isAmmoLoaded(itemStack) ? 1.0F : 0.0F;
+            if (livingEntity != null && livingEntity instanceof PlayerEntity && itemStack.getItem() instanceof MzCrossbow){
+                if (!isAmmoLoaded(itemStack)){
+                    PlayerEntity player = (PlayerEntity) livingEntity;
+                    if (itemStack.equals(player.getHeldItemMainhand())){
+                        if (pullProgress > 0.001f){
+                            return 1.0f;
+                        }
+                    }
+                }
+            }
+            return 0.0f;
         });
         this.addPropertyOverride(new ResourceLocation("charged"), (itemStack, worldIn, livingEntity) -> {
             return livingEntity != null && isAmmoLoaded(itemStack) ? 1.0F : 0.0F;
@@ -86,6 +97,7 @@ public abstract class MzCrossbow extends ShootableItem {
             result[2] = 1.0f;
             result[3] = 20.0f;
             result[4] = 0.6f;
+            setMzCrsBowInfo(itemStack, result);
         }
         else{
             result[0] = nbt.getFloat("mz_bow_fptick");
@@ -181,7 +193,6 @@ public abstract class MzCrossbow extends ShootableItem {
         float tmpP = (float)(stack.getUseDuration() - player.getItemInUseCount()) / fullPullTick;
         if (tmpP > 1.0f){ tmpP = 1.0f; }
         setPullProgress(player.world, tmpP);
-        System.out.println(pullProgress);
     }
 
     public ActionResult<ItemStack> onItemRightClick(World worldIn, PlayerEntity player, Hand hand) {
@@ -191,13 +202,21 @@ public abstract class MzCrossbow extends ShootableItem {
                 float[] crsbowInfo = MzCrossbow.getMzCrsBowInfo(itemStack);
                 float velocityFactor = crsbowInfo[1];
                 fireProjectiles(worldIn, player, hand, itemStack, 3.15f * velocityFactor, 1.0F * finalInaccFactor);
+                // 测试连发
+                //startAutoLoading();
             }
+            // 清空装填
+            CompoundNBT nbt = itemStack.getOrCreateTag();
+            nbt.putInt("mz_ammo_loaded", 0);
+            nbt.putIntArray("mz_ammo", new int[]{});
+            setPullProgress(worldIn, 0.0f);
+            setCurrentAmmo(itemStack, null);
             return new ActionResult(ActionResultType.SUCCESS, itemStack);
         }
-        else if (autoLoading) {    // 取消自动拉弦
+        else if (autoLoading) {    // 自动装填中
             // TODO
-            revertAmmo();
-            return new ActionResult(ActionResultType.SUCCESS, itemStack);
+            //revertAmmo();
+            return new ActionResult(ActionResultType.FAIL, itemStack);
         }
         else if (playerFindAmmo(player)) {    // 开始手动拉弦
             startLoadingAmmo(worldIn);
@@ -277,16 +296,11 @@ public abstract class MzCrossbow extends ShootableItem {
         boolean isCreative = livingEntity instanceof PlayerEntity && ((PlayerEntity)livingEntity).abilities.isCreativeMode;
         if (ammo != null) {
             createArrowEntity(worldIn, livingEntity, hand, itemStack, ammo, isCreative, vel, inacc);
+
+            addStats(worldIn, livingEntity, itemStack);
+
         }
 
-        addStats(worldIn, livingEntity, itemStack);
-
-        // 清空装填
-        CompoundNBT nbt = itemStack.getOrCreateTag();
-        nbt.putInt("mz_ammo_loaded", 0);
-        nbt.putIntArray("mz_ammo", new int[]{});
-        setPullProgress(worldIn, 0.0f);
-        setCurrentAmmo(itemStack, null);
     }
 
     private void addStats(World worldIn, LivingEntity player, ItemStack itemStack) {
@@ -369,33 +383,46 @@ public abstract class MzCrossbow extends ShootableItem {
     @Override
     public void inventoryTick(ItemStack itemStack, World world, Entity entity, int slot, boolean inHand) {
         super.inventoryTick(itemStack, world, entity, slot, inHand);
-        if (entity instanceof PlayerEntity && autoLoading){
-            float tmpP = pullProgress;
-            if (tmpP < 0.0f){  // initialize auto load
-                if (playerFindAmmo((PlayerEntity)entity)){
-                    startLoadingAmmo(world);
-                    this.progressPass2 = false;
-                    this.progressPass5 = false;
-                    tmpP = 0.0f;
-                }
-                else{
+        if (autoLoading && entity != null){
+            if (entity instanceof PlayerEntity){
+                PlayerEntity player = (PlayerEntity)entity;
+                if (itemStack.equals(player.getHeldItemMainhand())){
+                    float tmpP = pullProgress;
+                    if (tmpP < 0.0f){  // initialize auto load
+                        if (playerFindAmmo(player)){
+                            if (!world.isRemote){ MzAutoLoader.TARGET = itemStack; }
+                            startLoadingAmmo(world);
+                            this.progressPass2 = false;
+                            this.progressPass5 = false;
+                            tmpP = 0.0f;
+                        }
+                        else{
+                            if (!world.isRemote){
+                                autoLoading = false;
+                            }
+                        }
+                    }
                     if (!world.isRemote){
-                        autoLoading = false;
+                        if (!MzAutoLoader.TARGET.equals(itemStack)){  // 切换物品时退出自动装填模式
+                            autoLoading = false;
+                            setPullProgress(world, 0.0f);
+                            return;
+                        }
+                    }
+                    boolean loadFinished = false;
+                    tmpP += (1.0f/getFullPullTick(itemStack));
+                    if (tmpP > 1.0f){
+                        tmpP = 1.0f;
+                        loadFinished = true;
+                    }
+                    setPullProgress(world, tmpP);
+                    if (loadFinished){
+                        if (!world.isRemote){
+                            autoLoading = false;
+                        }
+                        onPlayerStoppedUsing(itemStack, world, (LivingEntity)entity, 0);
                     }
                 }
-            }
-            boolean loadFinished = false;
-            tmpP += (1.0f/getFullPullTick(itemStack));
-            if (tmpP > 1.0f){
-                tmpP = 1.0f;
-                loadFinished = true;
-            }
-            setPullProgress(world, tmpP);
-            if (loadFinished){
-                if (!world.isRemote){
-                    autoLoading = false;
-                }
-                onPlayerStoppedUsing(itemStack, world, (LivingEntity)entity, 0);
             }
         }
     }

@@ -2,6 +2,7 @@ package com.mizfrank.mzrpg144;
 
 import com.mizfrank.mzrpg144.block.BlockCollection;
 import com.mizfrank.mzrpg144.block.ContainerCollection;
+import com.mizfrank.mzrpg144.block.MzMagicTableScreen;
 import com.mizfrank.mzrpg144.block.MzMedalBoxScreen;
 import com.mizfrank.mzrpg144.entity.*;
 import com.mizfrank.mzrpg144.item.ItemCollection;
@@ -93,7 +94,7 @@ public class MzRPG {
         LOGGER.info("Got game settings {}", event.getMinecraftSupplier().get().gameSettings);
 
         ScreenManager.registerFactory(ContainerCollection.MZ_MEDAL_BOX_CONTAINER.get(), MzMedalBoxScreen::new);
-
+        ScreenManager.registerFactory(ContainerCollection.MZ_MAGIC_TABLE_CONTAINER.get(), MzMagicTableScreen::new);
 
         RenderingRegistry.registerEntityRenderingHandler(MzArrowEntityEx.class, MzArrowRenderer::new);
 

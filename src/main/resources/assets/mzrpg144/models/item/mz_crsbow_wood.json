@@ -28,7 +28,8 @@
     "overrides": [
         {
             "predicate": {
-                "pulling": 1
+                "pulling": 1,
+                "pull": 0.0
             },
             "model": "mzrpg144:item/mz_crsbow_wood_p0"
         },

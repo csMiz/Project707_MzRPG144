@@ -1,4 +1,4 @@
-package com.mizfrank.mzrpg144.util;
+package com.mizfrank.mzrpg144;
 
 import com.mizfrank.mzrpg144.item.MzItemWeapon.MzArrow.MzArrowEntityEx;
 import net.minecraft.entity.Entity;

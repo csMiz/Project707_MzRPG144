@@ -56,6 +56,7 @@ public abstract class MzBow extends ShootableItem {
             result[2] = 1.0f;
             result[3] = 30.0f;
             result[4] = 0.4f;
+            setMzBowInfo(itemStack, result);
         }
         else{
             result[0] = nbt.getFloat("mz_bow_fptick");

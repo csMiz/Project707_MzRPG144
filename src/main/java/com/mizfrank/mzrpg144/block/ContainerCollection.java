@@ -27,4 +27,16 @@ public class ContainerCollection {
                 return new MzMedalBoxContainer(windowId, world, pos, inv, inv.player);
     }));
 
+    public static final RegistryObject<ContainerType<MzMagicTableContainer>> MZ_MAGIC_TABLE_CONTAINER = CONTAINERS.register(
+            "mz_magic_table_container", () -> IForgeContainerType.create((windowId, inv, data) -> {
+                BlockPos pos;
+                if (data == null){
+                    pos = new BlockPos(0,0,0);
+                }
+                else{
+                    pos = data.readBlockPos();
+                }
+                World world = inv.player.getEntityWorld();
+                return new MzMagicTableContainer(windowId, world, pos, inv, inv.player);
+            }));
 }
