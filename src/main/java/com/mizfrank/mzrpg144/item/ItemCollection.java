@@ -6,6 +6,7 @@ import com.mizfrank.mzrpg144.item.MzItemWeapon.MzArrow.MzArrowAP;
 import com.mizfrank.mzrpg144.item.MzItemWeapon.MzArrow.MzArrowAPCR;
 import com.mizfrank.mzrpg144.item.MzItemWeapon.MzArrow.MzArrowHE;
 import com.mizfrank.mzrpg144.item.MzItemWeapon.MzBow.MzBowWood;
+import com.mizfrank.mzrpg144.item.MzItemWeapon.MzCrossbow.MzChukonu;
 import com.mizfrank.mzrpg144.item.MzItemWeapon.MzCrossbow.MzCrossbowWood;
 import com.mizfrank.mzrpg144.item.MzItemWeapon.MzSword.MzSwordIron;
 import net.minecraft.item.BlockItem;
@@ -50,6 +51,9 @@ public class ItemCollection {
 
     public static final RegistryObject<Item> MZ_CRSBOW_WOOD = ITEMS.register("mz_crsbow_wood", () -> new MzCrossbowWood(
             new MzCrossbowWood.Properties()));
+
+    public static final RegistryObject<Item> MZ_CHUKONU = ITEMS.register("mz_ckn", () -> new MzChukonu(
+            new MzChukonu.Properties()));
 
 
     public static final RegistryObject<Item> MZ_ARROW_AP = ITEMS.register("mz_arrow_ap", () -> new MzArrowAP(

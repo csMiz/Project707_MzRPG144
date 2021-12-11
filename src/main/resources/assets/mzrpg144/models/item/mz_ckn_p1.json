@@ -1,0 +1,6 @@
+{
+    "parent": "mzrpg144:item/mz_ckn",
+    "textures": {
+        "layer0": "mzrpg144:item/mz_ckn_p1"
+    }
+}

@@ -5,6 +5,8 @@ import com.mizfrank.mzrpg144.block.ContainerCollection;
 import com.mizfrank.mzrpg144.block.MzMagicTableScreen;
 import com.mizfrank.mzrpg144.block.MzMedalBoxScreen;
 import com.mizfrank.mzrpg144.entity.*;
+import com.mizfrank.mzrpg144.gen.StructureCollection;
+import com.mizfrank.mzrpg144.gen.StructurePieceCollection;
 import com.mizfrank.mzrpg144.item.ItemCollection;
 import com.mizfrank.mzrpg144.item.ItemRendererCollection;
 import com.mizfrank.mzrpg144.item.MzItemWeapon.MzArrow.MzArrowEntityEx;
@@ -75,6 +77,8 @@ public class MzRPG {
         ContainerCollection.CONTAINERS.register(FMLJavaModLoadingContext.get().getModEventBus());
 
         ItemRendererCollection.ENTITY_TYPES.register(FMLJavaModLoadingContext.get().getModEventBus());
+
+        StructureCollection.STRUCTS.register(FMLJavaModLoadingContext.get().getModEventBus());
     }
 
     private void setup(final FMLCommonSetupEvent event)

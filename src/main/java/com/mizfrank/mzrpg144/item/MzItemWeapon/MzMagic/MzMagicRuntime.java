@@ -43,6 +43,8 @@ public class MzMagicRuntime {
 
     protected Map<String, Integer> FunctionInfoPosition = new HashMap<>();
 
+    protected Map<String, String[]> FunctionArgType = new HashMap<>();
+
     protected int RunningCursor = 0;
 
 
@@ -74,6 +76,7 @@ public class MzMagicRuntime {
                         return 1;
                     }
                     FunctionInfoPosition.put(tmpKey, i);
+                    // TODO: FunctionArgType
                 }
                 else if (cmd.equals("end")){
                     if (cmd2.equals("structure")){
@@ -88,7 +91,10 @@ public class MzMagicRuntime {
             }
         }
         if (FunctionInfoPosition.containsKey(".main")){
+            SegmentStack.push(new Pair<>("sub", MzMagicRtObject.TypeInt(-1)));
+            SegmentStack.push(new Pair<>("sub", MzMagicRtObject.TypeDelegate(".main")));
             RunningCursor = FunctionInfoPosition.get(".main");
+
             return 0;
         }
         return 1;
@@ -118,13 +124,135 @@ public class MzMagicRuntime {
             String cmd = segs[0];
             if (cmd.equals("sub")){
                 // TODO: 校验参数类型及数量
-                SegmentStack.push(new Pair<>(segs[1], new MzMagicRtObject()));
+                Stack<MzMagicRtObject> args = new Stack<>();
+                while (!SegmentStack.peek().getKey().equals("sub")){
+                    args.push(SegmentStack.pop().getValue());
+                }
+                String funcDefName = SegmentStack.peek().getValue().getString();
+                String[] argDefList = FunctionArgType.get(funcDefName);
+                if (args.size()*2 == argDefList.length){
+                    if (argDefList.length > 0){
+                        for (int i = 0; i < args.size(); i++){
+                            if (argDefList[i*2].equals(args.peek().printType())){
+                                SegmentStack.push(new Pair<>(argDefList[i*2+1], args.pop()));
+                            }
+                            else{
+                                return 1;
+                            }
+                        }
+                    }
+                }
+                else{
+                    return 1;
+                }
+            }
+            else if (cmd.equals("dim")){
+                if (segs.length == 4){
+                    String varName = segs[1];
+                    if (!segs[2].equals("as")){
+                        return 1;
+                    }
+                    String varType = segs[3];
+                    SegmentStack.push(new Pair<>(varName, MzMagicRtObject.From(varType)));
+                }
+                else{
+                    return 1;
+                }
+            }
+            else{
+                if (segs.length > 3){
+                    if (segs[1].equals("=")){  // 赋值
+                        String tmpVarName = segs[0];
+                        List<String> tmpExpr = new ArrayList<>();
+                        for (int i = 2; i < segs.length; i++){
+                            tmpExpr.add(segs[i]);
+                        }
+                        MzMagicRtObject targetObj = findStackVariable(tmpVarName);
+                        if (!SegmentStack.peek().getKey().equals("expr")){
+                            String exprSeg = tmpExpr.get(0);
+                            if (isNumber(exprSeg)){
+                                SegmentStack.push(new Pair<>("expr", parseNumber(exprSeg)));
+                            }
+                            else if (isOperator(exprSeg)){
 
+                            }
+                        }
+                    }
+                }
             }
 
         }
         RunningCursor += 1;
         return 0;
+    }
+
+    public MzMagicRtObject findStackVariable(String varName){
+        // TODO
+        return null;
+    }
+
+    public boolean isNumber(String expr){
+        char[] chrs = expr.toCharArray();
+        int dotCount = 0;
+        for (int i = 0; i < chrs.length; i++){
+            char ch = chrs[i];
+            if (ch >= '0' && ch <= '9'){
+                // pass
+            }
+            else if (ch == '.'){
+                dotCount += 1;
+            }
+            else{
+                if (i == chrs.length - 1){
+                    if (ch=='f'||ch=='F'||ch=='d'||ch=='D'){
+                        // pass
+                    }
+                    else{
+                        return false;
+                    }
+                }
+                else{
+                    return false;
+                }
+            }
+        }
+        return (dotCount <= 1);
+    }
+    public MzMagicRtObject parseNumber(String expr){
+        char[] chrs = expr.toCharArray();
+        int dotCount = 0;
+        for (char ch : chrs){
+            if (ch == '.'){
+                dotCount += 1;
+            }
+        }
+        if (dotCount == 1){
+            if (chrs[chrs.length-1] == 'f' || chrs[chrs.length-1] == 'F'){
+                return MzMagicRtObject.TypeFloat(Float.parseFloat(expr));
+            }
+            else{
+                //return MzMagicRtObject.TypeDouble(expr);
+            }
+        }
+        return MzMagicRtObject.TypeInt(Integer.parseInt(expr));
+    }
+    public boolean isOperator(String expr){
+        if (expr.equals("+")){
+            return true;
+        }
+        else if (expr.equals("-")){
+            return true;
+        }
+        else if (expr.equals("*")){
+            return true;
+        }
+        else if (expr.equals("/")){
+            return true;
+        }
+        else if (expr.equals("%")){
+            return true;
+        }
+        return false;
     }
 
     public int getSegmentCodeSize(){

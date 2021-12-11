@@ -3,9 +3,7 @@ package com.mizfrank.mzrpg144.item.MzItemWeapon.MzCrossbow;
 import com.mizfrank.mzrpg144.MzAutoLoader;
 import com.mizfrank.mzrpg144.MzRPG;
 import com.mizfrank.mzrpg144.item.ItemCollection;
-import com.mizfrank.mzrpg144.item.MzItemWeapon.MzArrow.MzArrow;
-import com.mizfrank.mzrpg144.item.MzItemWeapon.MzArrow.MzArrowAP;
-import com.mizfrank.mzrpg144.item.MzItemWeapon.MzArrow.MzArrowEntityEx;
+import com.mizfrank.mzrpg144.item.MzItemWeapon.MzArrow.*;
 import net.minecraft.advancements.CriteriaTriggers;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.Quaternion;
@@ -33,19 +31,19 @@ import java.util.function.Predicate;
 
 public abstract class MzCrossbow extends ShootableItem {
 
-    private boolean progressPass2 = false;
-    private boolean progressPass5 = false;
+    protected boolean progressPass2 = false;
+    protected boolean progressPass5 = false;
 
     public float finalInaccFactor = 1.0f;
 
-    protected float pullProgress = 0.0f;
-
-    // ==============以下的都要改成NBT=============
+    public float pullProgress = 0.0f;
 
     public boolean autoLoading = false;
+    public boolean flag_quitAmmo = false;
 
     protected ItemStack loadingAmmo = null;
     protected ItemStack nextAmmo = null;
+
 
     public MzCrossbow(Properties properties) {
         super(properties.group(MzRPG.MZ_ITEMGROUP));
@@ -59,7 +57,9 @@ public abstract class MzCrossbow extends ShootableItem {
 //                    pullProgress = (float)(itemStack.getUseDuration() - livingEntity.getItemInUseCount()) / fullPullTick;
 //                    if (pullProgress > 1.0f){ pullProgress = 1.0f; }
                     if (itemStack.equals(livingEntity.getHeldItemMainhand())){
-                        return pullProgress;
+                        if (pullProgress >= 0.0f && pullProgress <= 1.0f){
+                            return pullProgress;
+                        }
                     }
                 }
             }
@@ -88,7 +88,7 @@ public abstract class MzCrossbow extends ShootableItem {
     }
 
 
-    public static float[] getMzCrsBowInfo(ItemStack itemStack){
+    public float[] getMzCrsBowInfo(ItemStack itemStack){
         float[] result = new float[5];
         CompoundNBT nbt = itemStack.getTag();
         if (nbt == null){
@@ -109,7 +109,7 @@ public abstract class MzCrossbow extends ShootableItem {
         return result;
     }
 
-    public static float getFullPullTick(ItemStack itemStack){
+    public float getFullPullTick(ItemStack itemStack){
         CompoundNBT nbt = itemStack.getTag();
         if (nbt == null){
             return 25.0f;
@@ -119,7 +119,7 @@ public abstract class MzCrossbow extends ShootableItem {
         return r;
     }
 
-    public static void setMzCrsBowInfo(ItemStack itemStack, float[] info){
+    public void setMzCrsBowInfo(ItemStack itemStack, float[] info){
         CompoundNBT nbt = itemStack.getOrCreateTag();
         nbt.putFloat("mz_bow_fptick", info[0]);
         nbt.putFloat("mz_bow_vel", info[1]);
@@ -129,10 +129,9 @@ public abstract class MzCrossbow extends ShootableItem {
     }
 
     /**
-     * TODO: 从NBT获取弹药信息
-     * [AmmoType, ]
+     * 从NBT获取弹药信息
      */
-    public static ItemStack getCurrentAmmo(ItemStack itemStack){
+    public ItemStack getCurrentAmmo(ItemStack itemStack){
         CompoundNBT nbt = itemStack.getTag();
         if (nbt != null){
             if (nbt.contains("mz_ammo")){
@@ -142,7 +141,17 @@ public abstract class MzCrossbow extends ShootableItem {
                     if (ammoInfo[0] == 1){
                         ammo = MzArrowAP.parseAmmo(ammoInfo);
                     }
+                    else if (ammoInfo[0] == 2){
+                        ammo = MzArrowAPCR.parseAmmo(ammoInfo);
+                    }
+                    else if (ammoInfo[0] == 3){
+                        ammo = MzArrowHE.parseAmmo(ammoInfo);
+                    }
+                    else{
+                        ammo = MzArrowAP.parseAmmo(ammoInfo);
+                    }
                 }
+
                 return ammo;
             }
         }
@@ -152,17 +161,22 @@ public abstract class MzCrossbow extends ShootableItem {
     /**
      * 装载弹药，写入NBT
      */
-    private static void setCurrentAmmo(ItemStack itemStackCrossbow, ItemStack itemStackAmmo) {
+    public void setCurrentAmmo(ItemStack itemStackCrossbow, ItemStack itemStackAmmo) {
         CompoundNBT nbt = itemStackCrossbow.getOrCreateTag();
         if (itemStackAmmo == null){
             nbt.putIntArray("mz_ammo", new int[]{});
         }
         else{
-            nbt.putIntArray("mz_ammo", ((MzArrow)(itemStackAmmo.getItem())).getBasicInfo(itemStackAmmo));
+            if (itemStackAmmo.isEmpty()){
+                nbt.putIntArray("mz_ammo", new int[]{});
+            }
+            else{
+                nbt.putIntArray("mz_ammo", ((MzArrow)(itemStackAmmo.getItem())).getBasicInfo(itemStackAmmo));
+            }
         }
     }
 
-    public static boolean isAmmoLoaded(ItemStack itemStack){
+    public boolean isAmmoLoaded(ItemStack itemStack){
         CompoundNBT nbt = itemStack.getTag();
         if (nbt != null){
             int loaded = nbt.getInt("mz_ammo_loaded");
@@ -189,7 +203,7 @@ public abstract class MzCrossbow extends ShootableItem {
 
     @Override
     public void onUsingTick(ItemStack stack, LivingEntity player, int count) {
-        float fullPullTick = MzCrossbow.getFullPullTick(stack);
+        float fullPullTick = getFullPullTick(stack);
         float tmpP = (float)(stack.getUseDuration() - player.getItemInUseCount()) / fullPullTick;
         if (tmpP > 1.0f){ tmpP = 1.0f; }
         setPullProgress(player.world, tmpP);
@@ -199,11 +213,19 @@ public abstract class MzCrossbow extends ShootableItem {
         ItemStack itemStack = player.getHeldItem(hand);
         if (isAmmoLoaded(itemStack)) {    // 射击
             if (!worldIn.isRemote) {
-                float[] crsbowInfo = MzCrossbow.getMzCrsBowInfo(itemStack);
+                float[] crsbowInfo = getMzCrsBowInfo(itemStack);
                 float velocityFactor = crsbowInfo[1];
+                float basicInaccFactor = crsbowInfo[2];
+                float dynamicInaccFactor = crsbowInfo[3];
                 fireProjectiles(worldIn, player, hand, itemStack, 3.15f * velocityFactor, 1.0F * finalInaccFactor);
                 // 测试连发
                 //startAutoLoading();
+
+                // set inacc after shooting
+                float tmpInacc = basicInaccFactor +  dynamicInaccFactor * 0.3f;
+                if (tmpInacc > finalInaccFactor){
+                    finalInaccFactor = tmpInacc;
+                }
             }
             // 清空装填
             CompoundNBT nbt = itemStack.getOrCreateTag();
@@ -214,12 +236,12 @@ public abstract class MzCrossbow extends ShootableItem {
             return new ActionResult(ActionResultType.SUCCESS, itemStack);
         }
         else if (autoLoading) {    // 自动装填中
-            // TODO
-            //revertAmmo();
+            // 不取消自动装填
+            // 取消自动装填的工作绑定到C键
             return new ActionResult(ActionResultType.FAIL, itemStack);
         }
         else if (playerFindAmmo(player)) {    // 开始手动拉弦
-            startLoadingAmmo(worldIn);
+            startLoadingAmmo(worldIn, player);
             this.progressPass2 = false;
             this.progressPass5 = false;
             player.setActiveHand(hand);
@@ -230,8 +252,22 @@ public abstract class MzCrossbow extends ShootableItem {
     }
 
     public void startAutoLoading(){
+        // This event is called in Client only
         pullProgress = -1.0f;
         autoLoading = true;
+    }
+
+    public void switchAmmo(){
+        // This event is called in Client only
+        if (autoLoading){
+            System.out.println("Quit Auto-loading");
+            pullProgress = -2.0f;
+        }
+        else{
+            System.out.println("Quit Ammo");
+            pullProgress = 0.0f;
+            flag_quitAmmo = true;
+        }
     }
 
     public void onPlayerStoppedUsing(ItemStack itemStack, World worldIn, LivingEntity livingEntity, int tickIn) {
@@ -319,7 +355,7 @@ public abstract class MzCrossbow extends ShootableItem {
         if (!worldIn.isRemote) {
             SoundEvent sound1 = SoundEvents.ITEM_CROSSBOW_LOADING_START;
             SoundEvent sound2 = SoundEvents.ITEM_CROSSBOW_LOADING_MIDDLE;
-            float fullPullTick = MzCrossbow.getFullPullTick(itemStack);
+            float fullPullTick = getFullPullTick(itemStack);
             float progress = (float)(itemStack.getUseDuration() - useTick) / fullPullTick;
             if (progress < 0.2F) {
                 this.progressPass2 = false;
@@ -350,22 +386,33 @@ public abstract class MzCrossbow extends ShootableItem {
 
     // 自定义识别弹药
     public boolean playerFindAmmo(PlayerEntity player){
-        // TODO
-        nextAmmo = new ItemStack(ItemCollection.MZ_ARROW_AP.get());
-        return true;
+        for(int i = 0; i < player.inventory.getSizeInventory(); ++i) {
+            ItemStack tmpItem = player.inventory.getStackInSlot(i);
+            if (tmpItem.getItem() instanceof MzArrow) {
+                nextAmmo = tmpItem;
+                return true;
+            }
+        }
+        //nextAmmo = new ItemStack(ItemCollection.MZ_ARROW_AP.get());
+        return false;
     }
 
     // 开始装填，减少背包里的弹药
-    public void startLoadingAmmo(World worldIn){
-        // TODO
+    public void startLoadingAmmo(World worldIn, PlayerEntity player){
         if (!worldIn.isRemote){
             ItemStack itemStackAmmo = nextAmmo;
-            loadingAmmo = itemStackAmmo;
+            loadingAmmo = itemStackAmmo.copy();
+
+            // deleteStack will remove all ammo in one stack!
+            // player.inventory.deleteStack(itemStackAmmo);
+            int tmpSlot = player.inventory.getSlotFor(itemStackAmmo);
+            player.inventory.getStackInSlot(tmpSlot).shrink(1);
+
+            nextAmmo = null;
         }
     }
 
-    public void endLoadingAmmo(World worldIn,ItemStack itemStackCrossbow){
-        // TODO
+    public void endLoadingAmmo(World worldIn, ItemStack itemStackCrossbow){
         CompoundNBT nbt = itemStackCrossbow.getOrCreateTag();
         nbt.putInt("mz_ammo_loaded", 1);
         setCurrentAmmo(itemStackCrossbow, loadingAmmo);
@@ -376,22 +423,36 @@ public abstract class MzCrossbow extends ShootableItem {
     }
 
     // 归还没有装填完的弹药
-    public void revertAmmo(){
-        // TODO
+    public void revertAmmo(World worldIn, PlayerEntity player){
+        if (!worldIn.isRemote){
+            if (loadingAmmo != null){
+                player.inventory.addItemStackToInventory(loadingAmmo);
+                loadingAmmo = null;
+            }
+        }
+        ItemStack crsbow = player.getHeldItemMainhand();
+        if (isAmmoLoaded(crsbow)){
+            ItemStack ammo = getCurrentAmmo(crsbow);
+            if ((ammo != null) && (!worldIn.isRemote)){
+                player.inventory.addItemStackToInventory(ammo);
+            }
+            CompoundNBT nbt = crsbow.getOrCreateTag();
+            nbt.putInt("mz_ammo_loaded", 0);
+            setCurrentAmmo(crsbow, null);
+        }
     }
 
     @Override
     public void inventoryTick(ItemStack itemStack, World world, Entity entity, int slot, boolean inHand) {
-        super.inventoryTick(itemStack, world, entity, slot, inHand);
         if (autoLoading && entity != null){
             if (entity instanceof PlayerEntity){
                 PlayerEntity player = (PlayerEntity)entity;
                 if (itemStack.equals(player.getHeldItemMainhand())){
                     float tmpP = pullProgress;
-                    if (tmpP < 0.0f){  // initialize auto load
+                    if (tmpP == -1.0f){  // initialize auto load
                         if (playerFindAmmo(player)){
                             if (!world.isRemote){ MzAutoLoader.TARGET = itemStack; }
-                            startLoadingAmmo(world);
+                            startLoadingAmmo(world, player);
                             this.progressPass2 = false;
                             this.progressPass5 = false;
                             tmpP = 0.0f;
@@ -401,6 +462,14 @@ public abstract class MzCrossbow extends ShootableItem {
                                 autoLoading = false;
                             }
                         }
+                    }
+                    else if (tmpP == -2.0f){
+                        // 退弹
+                        if (!world.isRemote){
+                            autoLoading = false;
+                            revertAmmo(world, player);
+                        }
+                        tmpP = 0.0f;
                     }
                     if (!world.isRemote){
                         if (!MzAutoLoader.TARGET.equals(itemStack)){  // 切换物品时退出自动装填模式
@@ -421,6 +490,38 @@ public abstract class MzCrossbow extends ShootableItem {
                             autoLoading = false;
                         }
                         onPlayerStoppedUsing(itemStack, world, (LivingEntity)entity, 0);
+                    }
+                }
+            }
+        }
+        if (flag_quitAmmo && entity != null){
+            if (entity instanceof PlayerEntity){
+                PlayerEntity player = (PlayerEntity)entity;
+                if (itemStack.equals(player.getHeldItemMainhand())){
+                    if (!world.isRemote){
+                        flag_quitAmmo = false;
+                        autoLoading = false;
+                        revertAmmo(world, player);
+                    }
+                }
+            }
+        }
+        if (entity != null){
+            if (entity instanceof  PlayerEntity){
+                if (world.isRemote){
+                    // for cross-hair, client only
+                    float[] info = getMzCrsBowInfo(itemStack);
+                    float accRecoverFactor = info[4];
+                    float basicInaccFactor = info[2];
+                    float dynamicInaccFactor = info[3];
+
+                    finalInaccFactor -= accRecoverFactor;
+                    if (finalInaccFactor < basicInaccFactor){
+                        finalInaccFactor = basicInaccFactor;
+                    }
+                    float tmpInacc = basicInaccFactor +  dynamicInaccFactor*(float)(entity.getMotion().length());
+                    if (tmpInacc > finalInaccFactor){
+                        finalInaccFactor = tmpInacc;
                     }
                 }
             }

@@ -4,6 +4,7 @@ import com.mizfrank.mzrpg144.entity.IMzSpecialty;
 import com.mizfrank.mzrpg144.entity.MzSpecialty;
 import com.mizfrank.mzrpg144.entity.MzSpecialtyProvider;
 import com.mizfrank.mzrpg144.item.MzItemWeapon.MzBow.MzBow;
+import com.mizfrank.mzrpg144.item.MzItemWeapon.MzCrossbow.MzChukonu;
 import com.mizfrank.mzrpg144.item.MzItemWeapon.MzCrossbow.MzCrossbow;
 import com.mizfrank.mzrpg144.item.MzItemWeapon.MzSword.MzSword;
 import com.mojang.blaze3d.platform.GlStateManager;
@@ -23,6 +24,7 @@ import net.minecraft.particles.ParticleTypes;
 import net.minecraft.util.DamageSource;
 import net.minecraft.util.SoundEvents;
 import net.minecraft.util.text.StringTextComponent;
+import net.minecraft.world.gen.feature.structure.TemplateStructurePiece;
 import net.minecraft.world.server.ServerWorld;
 import net.minecraftforge.client.event.FOVUpdateEvent;
 import net.minecraftforge.client.event.InputEvent;
@@ -57,18 +59,34 @@ public class EventHandler {
     public void RenderGameOverlayEvent(RenderGameOverlayEvent event){
         if (event.getType() == RenderGameOverlayEvent.ElementType.CROSSHAIRS){
             ItemStack itemStack = Minecraft.getInstance().player.getHeldItemMainhand();
-            if (itemStack.getItem() instanceof MzBow){
-                MzBow item = (MzBow)itemStack.getItem();
+            if (!itemStack.isEmpty()){
                 IngameGui gui = Minecraft.getInstance().ingameGUI;
                 MainWindow mainWindow = Minecraft.getInstance().mainWindow;
                 int centerX = (int)(mainWindow.getScaledWidth() / 2);
                 int centerY = (int)(mainWindow.getScaledHeight() / 2);
 
-                float finalInacc = item.finalInaccFactor;
-                float finalProg = item.pullProgress;
-                finalInacc = finalInacc * 2.5f;
-                renderMzCrosshair1(finalInacc, centerX, centerY);
-                renderMzCrosshair2(finalInacc, finalProg, centerX, centerY);
+                if (itemStack.getItem() instanceof MzBow){
+                    MzBow item = (MzBow)itemStack.getItem();
+                    float finalInacc = item.finalInaccFactor;
+                    float finalProg = item.pullProgress;
+                    finalInacc = finalInacc * 2.5f;
+                    renderMzCrosshair1(finalInacc, centerX, centerY);
+                    renderMzCrosshair2(finalInacc, finalProg, centerX, centerY);
+                }
+                else if (itemStack.getItem() instanceof MzCrossbow){
+                    MzCrossbow item = (MzCrossbow)itemStack.getItem();
+                    float finalInacc = item.finalInaccFactor;
+                    float finalProg = item.pullProgress;
+                    finalInacc = finalInacc * 2.5f;
+                    renderMzCrosshair1(finalInacc, centerX, centerY);
+                    renderMzCrosshair2(finalInacc, finalProg, centerX, centerY);
+                    if (itemStack.getItem() instanceof MzChukonu){
+                        MzChukonu ckn = (MzChukonu)item;
+                        renderMzCrosshair3(ckn.getCurrentAmmoCount(itemStack),
+                                ckn.getMaxAmmoCount(itemStack),
+                                ckn.singleLoadProgress, ckn.loadingMode, centerX, centerY);
+                    }
+                }
                 event.setCanceled(true);
             }
         }
@@ -142,17 +160,54 @@ public class EventHandler {
         double lb = inacc;
         if (lb > 70.0) { lb = 70.0; }
         double ub = lb + 2.0;
-        for (int i = 0; i < drawCount; i++){
+        for (int i = 0; i < 25; i++){
             double alpha = 0.5 * Math.PI - interval * i;
             if (alpha < 0){ alpha += (2.0*Math.PI); }
             double nearX = lb * Math.cos(alpha);
             double nearY = lb * Math.sin(alpha);
             double farX = ub * Math.cos(alpha);
             double farY = ub * Math.sin(alpha);
-            bufferbuilder.pos(cx+nearX, cy-nearY, 0).color(colorR, colorG, colorB, colorA).endVertex();
-            bufferbuilder.pos(cx+farX, cy-farY, 0).color(colorR, colorG, colorB, colorA).endVertex();
+            if (i < drawCount){
+                bufferbuilder.pos(cx+nearX, cy-nearY, 0).color(colorR, colorG, colorB, colorA).endVertex();
+                bufferbuilder.pos(cx+farX, cy-farY, 0).color(colorR, colorG, colorB, colorA).endVertex();
+            }
+            else{
+                bufferbuilder.pos(cx+nearX, cy-nearY, 0).color(0, 0, 0, colorA).endVertex();
+                bufferbuilder.pos(cx+farX, cy-farY, 0).color(0, 0, 0, colorA).endVertex();
+            }
         }
 
+        tessellator.draw();
+        GlStateManager.depthMask(true);
+        GlStateManager.enableTexture();
+    }
+
+    public void renderMzCrosshair3(int currentCount, int maxCount, float longLoadProgress, int loadingMode, float cx, float cy){
+        GlStateManager.disableTexture();
+        GlStateManager.depthMask(false);
+        Tessellator tessellator = Tessellator.getInstance();
+        BufferBuilder bufferbuilder = tessellator.getBuffer();
+        GL11.glLineWidth(3.0F);
+        bufferbuilder.begin(1, DefaultVertexFormats.POSITION_COLOR);
+        for (int i = 0; i < maxCount; i++){
+            float tmpX = cx + 60 + 6*i;
+            float tmpY = cy + 10;
+            if (i < currentCount){  // loaded
+                bufferbuilder.pos(tmpX, tmpY, 0).color(0, 255, 0, 200).endVertex();
+                bufferbuilder.pos(tmpX, tmpY+10, 0).color(0, 255, 0, 200).endVertex();
+            }
+            else{
+                bufferbuilder.pos(tmpX, tmpY, 0).color(0, 0, 0, 200).endVertex();
+                bufferbuilder.pos(tmpX, tmpY+10, 0).color(0, 0, 0, 200).endVertex();
+            }
+            if (i == currentCount){
+                if (loadingMode == 1){
+                    float tmpHeight = longLoadProgress*10.0f;
+                    bufferbuilder.pos(tmpX, tmpY+10-tmpHeight, 0).color(255, 0, 0, 200).endVertex();
+                    bufferbuilder.pos(tmpX, tmpY+10, 0).color(255, 0, 0, 200).endVertex();
+                }
+            }
+        }
         tessellator.draw();
         GlStateManager.depthMask(true);
         GlStateManager.enableTexture();
@@ -175,6 +230,14 @@ public class EventHandler {
             if (heldItem.getItem() instanceof MzCrossbow){
                 MzCrossbow crsbow = (MzCrossbow) heldItem.getItem();
                 crsbow.startAutoLoading();
+            }
+        }
+        else if (Keybinds.KEY_SWITCH_AMMO.isPressed()){
+            System.out.println("Key SWAMMO pressed");
+            ItemStack heldItem = Minecraft.getInstance().player.getHeldItemMainhand();
+            if (heldItem.getItem() instanceof MzCrossbow){
+                MzCrossbow crsbow = (MzCrossbow) heldItem.getItem();
+                crsbow.switchAmmo();
             }
         }
     }
@@ -248,6 +311,7 @@ public class EventHandler {
         if (itemStack.getItem() instanceof MzBow){
             // TODO
         }
+
 
 //        public float getFovModifier() {
 //            float f = 1.0F;
